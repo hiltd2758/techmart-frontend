@@ -19,37 +19,19 @@ const Footer = () => {
           <div>
             <nav className="flex items-center gap-[3.5rem]">
               <NavLink
-                to={"/"}
+                to={"/support-center"}
                 className="text-base text-[#484848] capitalize font-normal font-poppins"
               >
                 support center
               </NavLink>
               <NavLink
-                to={"/"}
-                className="text-base text-[#484848] capitalize font-normal font-poppins"
-              >
-                invoicing
-              </NavLink>
-              <NavLink
-                to={"/"}
+                to={"/contact"}
                 className="text-base text-[#484848] capitalize font-normal font-poppins"
               >
                 contact
               </NavLink>
               <NavLink
-                to={"/"}
-                className="text-base text-[#484848] capitalize font-normal font-poppins"
-              >
-                careers
-              </NavLink>
-              <NavLink
-                to={"/"}
-                className="text-base text-[#484848] capitalize font-normal font-poppins"
-              >
-                blog
-              </NavLink>
-              <NavLink
-                to={"/"}
+                to={"/faqs"}
                 className="text-base text-[#484848] capitalize font-normal font-poppins"
               >
                 FAQs
@@ -60,7 +42,7 @@ const Footer = () => {
 
         <div className="flex items-center justify-center">
           <p className="text-sm text-[#484848] font-poppins font-normal">
-            Copyright &copy; 20250 fasco. All Rights Reserved
+            Copyright &copy; 20250 techmart. All Rights Reserved
           </p>
         </div>
       </div>

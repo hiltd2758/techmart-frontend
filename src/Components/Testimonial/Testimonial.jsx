@@ -84,24 +84,22 @@ const Testimonial = () => {
 
         {/* sliders */}
         <div className="w-full h-auto relative pb-20">
-          <div className="absolute left-1/2 transform translate-x-1/2 bottom-0 flex items-center gap-5 z-50">
-            <div>
-              <button
-                ref={prevRef}
-                className="w-[48px] h-[48px] bg-white shadow flex items-center justify-center border-[1px] border-[#8a8a8a] rounded-full cursor-pointer"
-              >
-                <IoIosArrowBack size={"1.8rem"} />
-              </button>
-            </div>
-            <div>
-              <button
-                ref={nextRef}
-                className="w-[48px] h-[48px] bg-white shadow flex items-center justify-center border-[1px] border-[#8a8a8a] rounded-full cursor-pointer"
-              >
-                <IoIosArrowForward size={"1.8rem"} />
-              </button>
-            </div>
-          </div>
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-14 flex items-center gap-5 z-50">
+  <button
+    ref={prevRef}
+    className="w-[48px] h-[48px] bg-white shadow flex items-center justify-center border border-[#8a8a8a] rounded-full"
+  >
+    <IoIosArrowBack size="1.8rem" />
+  </button>
+
+  <button
+    ref={nextRef}
+    className="w-[48px] h-[48px] bg-white shadow flex items-center justify-center border border-[#8a8a8a] rounded-full"
+  >
+    <IoIosArrowForward size="1.8rem" />
+  </button>
+</div>
+
 
           <Swiper
             modules={[Navigation]}
