@@ -19,6 +19,7 @@ import {
   FaEye,
   FaStar,
   FaChevronRight,
+  FaRedo,
 } from 'react-icons/fa';
 import HomeNavbar from '../../Components/HomeNavbar/HomeNavbar';
 import Footer from '../../Components/Footer/Footer.jsx';
@@ -32,6 +33,30 @@ const Account = () => {
     email: 'john.doe@example.com',
     phone: '+1 234 567 8900',
     joinDate: 'January 2024',
+    addresses: [
+      {
+        id: 1,
+        type: 'Home',
+        name: 'John Doe',
+        street: '123 Tech Street',
+        city: 'San Francisco',
+        state: 'CA',
+        zip: '94105',
+        phone: '+1 234 567 8900',
+        isDefault: true,
+      },
+      {
+        id: 2,
+        type: 'Office',
+        name: 'John Doe',
+        street: '456 Business Ave',
+        city: 'Palo Alto',
+        state: 'CA',
+        zip: '94301',
+        phone: '+1 234 567 8900',
+        isDefault: false,
+      },
+    ],
   };
 
   // Sample orders data
@@ -41,6 +66,7 @@ const Account = () => {
       date: '2024-01-15',
       status: 'delivered',
       total: 5499,
+      reviewed: false,
       items: [{ name: 'MacBook Pro 16" M3 Max', quantity: 1, price: 5499, image: '/arrivals/arrival_1.jpg' }],
     },
     {
@@ -48,6 +74,7 @@ const Account = () => {
       date: '2024-01-20',
       status: 'processing',
       total: 1299,
+      reviewed: false,
       items: [{ name: 'iPhone 15 Pro', quantity: 1, price: 1299, image: '/arrivals/arrival_3.png' }],
     },
     {
@@ -55,40 +82,16 @@ const Account = () => {
       date: '2024-01-22',
       status: 'shipped',
       total: 749,
+      reviewed: false,
       items: [{ name: 'AirPods Pro Gen 2', quantity: 3, price: 249, image: '/arrivals/arrival_4.jpg' }],
     },
     {
       id: 'ORD-4',
       date: '2024-01-25',
-      status: 'shipped',
+      status: 'cancelled',
       total: 749,
+      reviewed: false,
       items: [{ name: 'AirPods Pro Gen 2', quantity: 3, price: 249, image: '/arrivals/arrival_4.jpg' }],
-    },
-  ];
-
-  // Sample addresses
-  const addresses = [
-    {
-      id: 1,
-      type: 'Home',
-      name: 'John Doe',
-      street: '123 Tech Street',
-      city: 'San Francisco',
-      state: 'CA',
-      zip: '94105',
-      phone: '+1 234 567 8900',
-      isDefault: true,
-    },
-    {
-      id: 2,
-      type: 'Office',
-      name: 'John Doe',
-      street: '456 Business Ave',
-      city: 'Palo Alto',
-      state: 'CA',
-      zip: '94301',
-      phone: '+1 234 567 8900',
-      isDefault: false,
     },
   ];
 
@@ -211,7 +214,7 @@ const Account = () => {
                 <FaEye />
                 View Details
               </button>
-              {order.status === 'delivered' && (
+              {order.status === 'delivered' && order.reviewed === false && (
                 <button className="flex items-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-700 font-poppins font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300 cursor-pointer">
                   <FaStar />
                   Write Review
@@ -223,31 +226,91 @@ const Account = () => {
                   Cancel Order
                 </button>
               )}
+              {(order.status === 'cancelled' || order.status === 'delivered') && (
+                <button className="flex items-center gap-2 px-6 py-3 border-2 border-green-200 text-green-700 font-poppins font-semibold rounded-xl hover:border-green-700 hover:bg-green-50 transition-all duration-300 cursor-pointer">
+                  <FaRedo />
+                  Buy Back
+                </button>
+              )}
             </div>
 
             {selectedOrder && (
-              <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-                <div className="bg-white p-6 rounded-2xl w-11/12 md:w-2/3 lg:w-1/2 max-h-[90vh] overflow-y-auto">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">Order {selectedOrder.id}</h2>
-                    <button onClick={() => setSelectedOrder(null)} className="text-gray-500 cursor-pointer text-2xl">
+              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg p-6 relative">
+                  {/* Header */}
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">Order Details - {selectedOrder.id}</h2>
+                    <button onClick={() => setSelectedOrder(null)} className="text-gray-400 hover:text-gray-700 text-3xl font-bold cursor-pointer">
                       &times;
                     </button>
                   </div>
 
-                  <p>Date: {selectedOrder.date}</p>
-                  <p>Status: {selectedOrder.status}</p>
-
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className="flex justify-between p-2 border-b border-gray-100">
-                      <p>
-                        {item.name} x {item.quantity}
-                      </p>
-                      <p>${item.price}</p>
+                  {/* Order Info */}
+                  <div className="mb-6 border-b border-gray-100 py-4 space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Order Date</p>
+                      <p className="font-semibold text-gray-900">{selectedOrder.date}</p>
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Status</p>
+                      <span
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold ${
+                          getStatusConfig(selectedOrder.status).bgColor
+                        } ${getStatusConfig(selectedOrder.status).textColor} ${getStatusConfig(selectedOrder.status).borderColor} border-2`}
+                      >
+                        {React.createElement(getStatusConfig(selectedOrder.status).icon, {
+                          className: getStatusConfig(selectedOrder.status).iconColor,
+                        })}
+                        {getStatusConfig(selectedOrder.status).text}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                      <p className="font-bold text-lg">${selectedOrder.total.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  {/* Info */}
+                  <div className="mb-6 py-4 space-y-4">
+                    <p className="text-sm text-gray-500 mb-1">User Info</p>
+                  </div>
+                  {/* Order Items */}
+                  <div className="mb-6 border-t border-b border-gray-100 py-4 space-y-4">
+                    {selectedOrder.items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-4">
+                        <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center p-2 border border-gray-200">
+                          <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{item.name}</p>
+                          <p className="text-sm text-gray-500">x{item.quantity}</p>
+                        </div>
+                        <p className="font-bold text-gray-900">{item.price}VND</p>
+                      </div>
+                    ))}
+                  </div>
 
-                  <div className="text-right mt-4 font-bold">Total: ${selectedOrder.total.toLocaleString()}</div>
+                  {/* Delivery Address */}
+                  <div className="mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-2">Delivery Address</h3>
+                    <p className="text-gray-700">{selectedOrder.deliveryAddress || 'Not specified'}</p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    {selectedOrder.status === 'delivered' && !selectedOrder.reviewed && (
+                      <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300">
+                        <FaStar />
+                        Write Review
+                      </button>
+                    )}
+
+                    {(selectedOrder.status === 'cancelled' || selectedOrder.status === 'delivered') && (
+                      <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:border-green-700 hover:bg-green-50 transition-all duration-300">
+                        <FaRedo />
+                        Buy Back
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -340,7 +403,7 @@ const Account = () => {
             <p className="text-sm text-gray-500 font-medium">Total Orders</p>
           </div>
           <div className="text-center border-x-2 border-gray-100">
-            <p className="text-3xl font-bold text-gray-900 mb-1">{addresses.length}</p>
+            <p className="text-3xl font-bold text-gray-900 mb-1">{user.addresses.length}</p>
             <p className="text-sm text-gray-500 font-medium">Saved Addresses</p>
           </div>
           <div className="text-center">
@@ -366,7 +429,7 @@ const Account = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {addresses.map((address) => (
+        {user.addresses.map((address) => (
           <div
             key={address.id}
             className="bg-white border-2 border-gray-100 rounded-2xl p-6 relative hover:shadow-xl hover:border-gray-200 transition-all duration-300 group"
