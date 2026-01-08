@@ -206,19 +206,19 @@ const Account = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setSelectedOrder(order)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
               >
                 <FaEye />
                 View Details
               </button>
               {order.status === 'delivered' && (
-                <button className="flex items-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-700 font-poppins font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300">
+                <button className="flex items-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-700 font-poppins font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300 cursor-pointer">
                   <FaStar />
                   Write Review
                 </button>
               )}
               {order.status === 'processing' && (
-                <button className="flex items-center gap-2 px-6 py-3 border-2 border-red-200 text-red-600 font-poppins font-semibold rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300">
+                <button className="flex items-center gap-2 px-6 py-3 border-2 border-red-200 text-red-600 font-poppins font-semibold rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300 cursor-pointer">
                   <FaTimesCircle />
                   Cancel Order
                 </button>
@@ -226,7 +226,7 @@ const Account = () => {
             </div>
 
             {selectedOrder && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
                 <div className="bg-white p-6 rounded-2xl w-11/12 md:w-2/3 lg:w-1/2 max-h-[90vh] overflow-y-auto">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold">Order {selectedOrder.id}</h2>
@@ -264,7 +264,7 @@ const Account = () => {
           <h2 className="text-3xl text-gray-900 font-poppins font-bold">Personal Information</h2>
           <p className="text-gray-500 mt-1">Manage your personal details</p>
         </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg">
+        <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
           <FaEdit />
           Edit Profile
         </button>
@@ -359,7 +359,7 @@ const Account = () => {
           <h2 className="text-3xl text-gray-900 font-poppins font-bold">Shipping Addresses</h2>
           <p className="text-gray-500 mt-1">Manage your delivery locations</p>
         </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg">
+        <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
           <FaPlus />
           Add New Address
         </button>
@@ -407,11 +407,22 @@ const Account = () => {
             </div>
 
             <div className="flex gap-3 pt-4 border-t-2 border-gray-100">
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300">
+              {!address.isDefault && (
+                <button
+                  className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-300 cursor-pointer"
+                  onClick={() => setDefaultAddress(address.id)}
+                >
+                  <FaCheckCircle />
+                  Set Default
+                </button>
+              )}
+
+              <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300 cursor-pointer">
                 <FaEdit />
                 Edit
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-600 font-semibold rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300">
+
+              <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-600 font-semibold rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300 cursor-pointer">
                 <FaTrash />
                 Delete
               </button>
@@ -463,7 +474,7 @@ const Account = () => {
                   <nav className="space-y-2">
                     <button
                       onClick={() => setActiveTab('orders')}
-                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 ${
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 cursor-pointer ${
                         activeTab === 'orders'
                           ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
                           : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
@@ -476,7 +487,7 @@ const Account = () => {
 
                     <button
                       onClick={() => setActiveTab('personal')}
-                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 ${
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 cursor-pointer ${
                         activeTab === 'personal'
                           ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
                           : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
@@ -489,7 +500,7 @@ const Account = () => {
 
                     <button
                       onClick={() => setActiveTab('addresses')}
-                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 ${
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300  cursor-pointer ${
                         activeTab === 'addresses'
                           ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
                           : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
@@ -501,12 +512,12 @@ const Account = () => {
                     </button>
 
                     <div className="pt-4 mt-4 border-t-2 border-gray-100 space-y-2">
-                      <button className="w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-gray-700 hover:bg-gray-100 transition-all duration-300">
+                      <button className="w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-gray-700 hover:bg-gray-100 transition-all duration-300 cursor-pointer">
                         <FaCog className="text-lg" />
                         <span className="flex-1">Settings</span>
                       </button>
 
-                      <button className="w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-red-600 hover:bg-red-50 transition-all duration-300 group">
+                      <button className="w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-red-600 hover:bg-red-50 transition-all duration-300 group cursor-pointer">
                         <FaSignOutAlt className="text-lg group-hover:translate-x-1 transition-transform" />
                         <span className="flex-1">Sign Out</span>
                       </button>
