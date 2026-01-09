@@ -41,7 +41,6 @@ const Account = () => {
         street: '123 Tech Street',
         city: 'San Francisco',
         state: 'CA',
-        zip: '94105',
         phone: '+1 234 567 8900',
         isDefault: true,
       },
@@ -52,7 +51,6 @@ const Account = () => {
         street: '456 Business Ave',
         city: 'Palo Alto',
         state: 'CA',
-        zip: '94301',
         phone: '+1 234 567 8900',
         isDefault: false,
       },
@@ -67,6 +65,7 @@ const Account = () => {
       status: 'delivered',
       total: 5499,
       reviewed: false,
+      addressId: 1,
       items: [{ name: 'MacBook Pro 16" M3 Max', quantity: 1, price: 5499, image: '/arrivals/arrival_1.jpg' }],
     },
     {
@@ -75,6 +74,7 @@ const Account = () => {
       status: 'processing',
       total: 1299,
       reviewed: false,
+      addressId: 1,
       items: [{ name: 'iPhone 15 Pro', quantity: 1, price: 1299, image: '/arrivals/arrival_3.png' }],
     },
     {
@@ -83,6 +83,7 @@ const Account = () => {
       status: 'shipped',
       total: 749,
       reviewed: false,
+      addressId: 2,
       items: [{ name: 'AirPods Pro Gen 2', quantity: 3, price: 249, image: '/arrivals/arrival_4.jpg' }],
     },
     {
@@ -91,6 +92,7 @@ const Account = () => {
       status: 'cancelled',
       total: 749,
       reviewed: false,
+      addressId: 2,
       items: [{ name: 'AirPods Pro Gen 2', quantity: 3, price: 249, image: '/arrivals/arrival_4.jpg' }],
     },
   ];
@@ -134,6 +136,85 @@ const Account = () => {
   };
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const InfoCard = ({ icon: Icon, label, textColor, colorClass, value }) => (
+    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}>
+          <Icon className={`${textColor}`} />
+        </div>
+        <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">{label}</label>
+      </div>
+      <p className="text-gray-900 font-bold text-lg">{value}</p>
+    </div>
+  );
+
+  const OrderItemCard = ({ item }) => (
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4 flex-1">
+        <div className="w-16 h-16 bg-white rounded-lg border-2 border-gray-100 p-2 flex-shrink-0">
+          <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-gray-900 font-semibold truncate">{item.name}</p>
+          <p className="text-sm text-gray-500">x{item.quantity}</p>
+        </div>
+      </div>
+      <span className="text-lg font-bold text-gray-900 whitespace-nowrap">${item.price}</span>
+    </div>
+  );
+
+  const ActionButton = ({ icon: Icon, label, colorClasses, onClick }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-${colorClasses}-200 text-${colorClasses}-700 font-semibold rounded-xl hover:border-${colorClasses}-900 hover:bg-${colorClasses}-50 transition-all duration-300 cursor-pointer whitespace-nowrap`}
+    >
+      {Icon && <Icon />}
+      {label}
+    </button>
+  );
+
+  const AddressCard = ({ address, onSetDefault }) => (
+    <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 relative hover:shadow-xl hover:border-gray-200 transition-all duration-300 group">
+      {address.isDefault && (
+        <span className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+          Default
+        </span>
+      )}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <FaMapMarkerAlt className="text-2xl text-blue-600" />
+          </div>
+          <div>
+            <h3 className="font-poppins font-bold text-xl text-gray-900 mb-1">{address.type}</h3>
+            <p className="text-gray-600 font-semibold">{address.name}</p>
+          </div>
+        </div>
+      </div>
+      <div className="space-y-2 text-sm text-gray-600 mb-6 pl-1">
+        <p className="flex items-start gap-2">
+          <span className="font-semibold text-gray-500 min-w-[60px]">Street:</span> <span className="font-medium">{address.street}</span>
+        </p>
+        <p className="flex items-start gap-2">
+          <span className="font-semibold text-gray-500 min-w-[60px]">City:</span>{' '}
+          <span className="font-medium">
+            {address.city}, {address.state}
+          </span>
+        </p>
+        <p className="flex items-start gap-2">
+          <span className="font-semibold text-gray-500 min-w-[60px]">Phone:</span> <span className="font-medium">{address.phone}</span>
+        </p>
+      </div>
+      <div className="flex gap-3 pt-4 border-t-2 border-gray-100">
+        {!address.isDefault && (
+          <ActionButton icon={FaCheckCircle} label="Set Default" colorClasses="green" onClick={() => onSetDefault(address.id)} />
+        )}
+        <ActionButton icon={FaEdit} label="Edit" colorClasses="gray" />
+        <ActionButton icon={FaTrash} label="Delete" colorClasses="red" />
+      </div>
+    </div>
+  );
 
   const OrdersSection = () => (
     <div className="space-y-6">
@@ -190,18 +271,7 @@ const Account = () => {
             {/* Order Items */}
             <div className="space-y-3 mb-6 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100">
               {order.items.map((item, index) => (
-                <div key={index} className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-16 h-16 bg-white rounded-lg border-2 border-gray-100 p-2 flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 font-semibold truncate">{item.name}</p>
-                      <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                    </div>
-                  </div>
-                  <span className="text-lg font-bold text-gray-900 whitespace-nowrap">${item.price}</span>
-                </div>
+                <OrderItemCard key={index} item={item} />
               ))}
             </div>
 
@@ -214,29 +284,19 @@ const Account = () => {
                 <FaEye />
                 View Details
               </button>
-              {order.status === 'delivered' && order.reviewed === false && (
-                <button className="flex items-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-700 font-poppins font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300 cursor-pointer">
-                  <FaStar />
-                  Write Review
-                </button>
-              )}
-              {order.status === 'processing' && (
-                <button className="flex items-center gap-2 px-6 py-3 border-2 border-red-200 text-red-600 font-poppins font-semibold rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300 cursor-pointer">
-                  <FaTimesCircle />
-                  Cancel Order
-                </button>
-              )}
-              {(order.status === 'cancelled' || order.status === 'delivered') && (
-                <button className="flex items-center gap-2 px-6 py-3 border-2 border-green-200 text-green-700 font-poppins font-semibold rounded-xl hover:border-green-700 hover:bg-green-50 transition-all duration-300 cursor-pointer">
-                  <FaRedo />
-                  Buy Back
-                </button>
-              )}
+
+              {order.status === 'delivered' && order.reviewed === false && <ActionButton icon={FaStar} label="Write Review" colorClasses="gray" />}
+
+              {order.status === 'processing' && <ActionButton icon={FaTimesCircle} label="Cancel Order" colorClasses="red" />}
+              {(order.status === 'cancelled' || order.status === 'delivered') && <ActionButton icon={FaRedo} label="Buy Back" colorClasses="green" />}
             </div>
 
             {selectedOrder && (
-              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg p-6 relative">
+              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setSelectedOrder(null)}>
+                <div
+                  className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-lg p-6 relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {/* Header */}
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">Order Details - {selectedOrder.id}</h2>
@@ -246,7 +306,7 @@ const Account = () => {
                   </div>
 
                   {/* Order Info */}
-                  <div className="mb-6 border-b border-gray-100 py-4 space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="border-b border-gray-100 py-4 space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500 mb-1">Order Date</p>
                       <p className="font-semibold text-gray-900">{selectedOrder.date}</p>
@@ -270,45 +330,40 @@ const Account = () => {
                     </div>
                   </div>
                   {/* Info */}
-                  <div className="mb-6 py-4 space-y-4">
-                    <p className="text-sm text-gray-500 mb-1">User Info</p>
+                  <div className="py-4 space-y-4">
+                    {user.addresses
+                      .filter((address) => address.id === selectedOrder.addressId)
+                      .map((address) => (
+                        <div key={address.id}>
+                          <p className="font-semibold text-gray-900 mb-1">
+                            {address.name} ({address.phone}) <span className="text-gray-400 font-normal">{address.type}</span>
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {address.street}, {address.city}, {address.state}
+                          </p>
+                        </div>
+                      ))}
                   </div>
                   {/* Order Items */}
-                  <div className="mb-6 border-t border-b border-gray-100 py-4 space-y-4">
+                  <div className="border-t border-b border-gray-100 py-4 space-y-4">
                     {selectedOrder.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-4">
-                        <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center p-2 border border-gray-200">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-500">x{item.quantity}</p>
-                        </div>
-                        <p className="font-bold text-gray-900">{item.price}VND</p>
-                      </div>
+                      <OrderItemCard key={index} item={item} />
                     ))}
-                  </div>
-
-                  {/* Delivery Address */}
-                  <div className="mb-6">
-                    <h3 className="font-semibold text-gray-900 mb-2">Delivery Address</h3>
-                    <p className="text-gray-700">{selectedOrder.deliveryAddress || 'Not specified'}</p>
                   </div>
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3 mt-4">
+                    {/* Write Review */}
                     {selectedOrder.status === 'delivered' && !selectedOrder.reviewed && (
-                      <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300">
-                        <FaStar />
-                        Write Review
-                      </button>
+                      <ActionButton icon={FaStar} label="Write Review" colorClasses="gray" />
                     )}
 
+                    {/* Cancel Order */}
+                    {selectedOrder.status === 'processing' && <ActionButton icon={FaTimesCircle} label="Cancel Order" colorClasses="red" />}
+
+                    {/* Buy Back */}
                     {(selectedOrder.status === 'cancelled' || selectedOrder.status === 'delivered') && (
-                      <button className="flex-1 flex items-center justify-center gap-2 px-6 py-3 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:border-green-700 hover:bg-green-50 transition-all duration-300">
-                        <FaRedo />
-                        Buy Back
-                      </button>
+                      <ActionButton icon={FaRedo} label="Buy Back" colorClasses="green" />
                     )}
                   </div>
                 </div>
@@ -355,45 +410,10 @@ const Account = () => {
 
         {/* Info Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <FaUser className="text-blue-600" />
-              </div>
-              <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Full Name</label>
-            </div>
-            <p className="text-gray-900 font-bold text-lg">{user.name}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FaEnvelope className="text-purple-600" />
-              </div>
-              <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Email</label>
-            </div>
-            <p className="text-gray-900 font-bold text-lg break-all">{user.email}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <FaPhone className="text-green-600" />
-              </div>
-              <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Phone</label>
-            </div>
-            <p className="text-gray-900 font-bold text-lg">{user.phone}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <FaCalendar className="text-orange-600" />
-              </div>
-              <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">Member Since</label>
-            </div>
-            <p className="text-gray-900 font-bold text-lg">{user.joinDate}</p>
-          </div>
+          <InfoCard icon={FaUser} label="Full Name" textColor="text-blue-600" colorClass="bg-blue-100" value={user.name} />
+          <InfoCard icon={FaEnvelope} label="Email" textColor="text-purple-600" colorClass=" bg-purple-100" value={user.email} />
+          <InfoCard icon={FaPhone} label="Phone" textColor="text-green-600" colorClass=" bg-green-100" value={user.phone} />
+          <InfoCard icon={FaCalendar} label="Member Since" textColor="text-orange-600" colorClass=" bg-orange-100" value={user.joinDate} />
         </div>
 
         {/* Account Stats */}
@@ -430,67 +450,7 @@ const Account = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {user.addresses.map((address) => (
-          <div
-            key={address.id}
-            className="bg-white border-2 border-gray-100 rounded-2xl p-6 relative hover:shadow-xl hover:border-gray-200 transition-all duration-300 group"
-          >
-            {address.isDefault && (
-              <span className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
-                Default
-              </span>
-            )}
-
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <FaMapMarkerAlt className="text-2xl text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-poppins font-bold text-xl text-gray-900 mb-1">{address.type}</h3>
-                  <p className="text-gray-600 font-semibold">{address.name}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-sm text-gray-600 mb-6 pl-1">
-              <p className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 min-w-[60px]">Street:</span>
-                <span className="font-medium">{address.street}</span>
-              </p>
-              <p className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 min-w-[60px]">City:</span>
-                <span className="font-medium">
-                  {address.city}, {address.state} {address.zip}
-                </span>
-              </p>
-              <p className="flex items-start gap-2">
-                <span className="font-semibold text-gray-500 min-w-[60px]">Phone:</span>
-                <span className="font-medium">{address.phone}</span>
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-4 border-t-2 border-gray-100">
-              {!address.isDefault && (
-                <button
-                  className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:border-green-500 hover:bg-green-50 transition-all duration-300 cursor-pointer"
-                  onClick={() => setDefaultAddress(address.id)}
-                >
-                  <FaCheckCircle />
-                  Set Default
-                </button>
-              )}
-
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-gray-900 hover:bg-gray-50 transition-all duration-300 cursor-pointer">
-                <FaEdit />
-                Edit
-              </button>
-
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 border-2 border-red-200 text-red-600 font-semibold rounded-xl hover:border-red-500 hover:bg-red-50 transition-all duration-300 cursor-pointer">
-                <FaTrash />
-                Delete
-              </button>
-            </div>
-          </div>
+          <AddressCard key={address.id} address={address} />
         ))}
       </div>
     </div>
