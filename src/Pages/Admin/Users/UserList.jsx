@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaSearch, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { Link } from 'react-router-dom'
 
 const UserList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -180,12 +181,13 @@ const UserList = () => {
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
-                      <button
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit user"
-                      >
-                        <FaEdit size={16} />
-                      </button>
+                      <Link
+  to={`/admin/users/edit/${user.id}`}
+  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+  title="Edit user"
+>
+  <FaEdit size={16} />
+</Link>
                       <button
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete user"

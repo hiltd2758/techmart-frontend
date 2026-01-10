@@ -12,13 +12,14 @@ import ProductDetail from "./Components/ProductDetail/ProductDetail.jsx";
 import Account from "./Pages/Account/Account.jsx";
 import AdminLayout from './Components/Admin/AdminLayout.jsx'  
 import Dashboard from './Pages/Admin/Dashboard.jsx'  
-// import ProductList from './Pages/Admin/Products/ProductList.jsx' 
 import ProductList from './Pages/Admin/Products/ProductList.jsx'  
 import AddProduct from './Pages/Admin/Products/AddProduct.jsx'  
 import EditProduct from './Pages/Admin/Products/EditProduct.jsx'
 import OrderList from './Pages/Admin/Orders/OrderList.jsx'
 import UserList from './Pages/Admin/Users/UserList.jsx'
+import EditUser from './Pages/Admin/Users/EditUser.jsx' // ← THÊM DÒNG NÀY
 import Settings from './Pages/Admin/Settings/Settings.jsx'
+
 function App() {
   return (
     <BrowserRouter>
@@ -69,7 +70,6 @@ function App() {
           element={
             <>
               <Product />
-              <Footer />
             </>
           }
         />
@@ -78,7 +78,6 @@ function App() {
           element={
             <>
               <ProductDetail />
-              <Footer />
             </>
           }
         />
@@ -90,15 +89,18 @@ function App() {
             </>
           }
         />
+
+        {/* Admin routes */}
         <Route path='/admin' element={<AdminLayout/>}>
-  <Route index element={<Dashboard/>} />
-  <Route path='products' element={<ProductList/>} />
-  <Route path='products/add' element={<AddProduct/>} />
-  <Route path='products/edit/:id' element={<EditProduct/>} />
-  <Route path='orders' element={<OrderList/>} />
-  <Route path='users' element={<UserList/>} />
-  <Route path='settings' element={<Settings/>} />
-</Route>
+          <Route index element={<Dashboard/>} />
+          <Route path='products' element={<ProductList/>} />
+          <Route path='products/add' element={<AddProduct/>} />
+          <Route path='products/edit/:id' element={<EditProduct/>} />
+          <Route path='orders' element={<OrderList/>} />
+          <Route path='users' element={<UserList/>} />
+          <Route path='users/edit/:id' element={<EditUser/>} /> 
+          <Route path='settings' element={<Settings/>} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
