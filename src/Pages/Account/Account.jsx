@@ -395,18 +395,34 @@ const Account = () => {
             <div className="w-24 h-24 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
               <FaUser className="text-white text-3xl" />
             </div>
-            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
-              <FaCheckCircle className="text-white text-xs" />
-            </div>
+            <span className="text-sm font-medium text-gray-500">Completed</span>
           </div>
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h3>
-            <p className="text-gray-500 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              Active Member
-            </p>
+          <div className="text-3xl font-bold text-gray-900">
+            {orders.filter((o) => o.status === "delivered").length}
+          </div>
+          <div className="text-sm text-gray-500 mt-1">
+            Successfully delivered
           </div>
         </div>
+
+        <div className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+              <FaChartLine className="text-xl text-purple-600" />
+            </div>
+            <span className="text-sm font-medium text-gray-500">
+              Total Spent
+            </span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">
+            $
+            {orders
+              .reduce((sum, order) => sum + order.total, 0)
+              .toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-500 mt-1">Lifetime value</div>
+        </div>
+      </div>
 
         {/* Info Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

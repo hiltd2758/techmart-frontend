@@ -191,6 +191,12 @@ const ProductDetail = () => {
     console.log(`Added ${quantity} x ${product.name} to cart`);
   };
 
+  const getRelatedProducts = () => {
+    return Object.values(productsDatabase)
+      .filter(p => p.category === product.category && p._id !== product._id)
+      .slice(0, 4);
+  };
+
   return (
     <>
       <HomeNavbar />
@@ -374,6 +380,50 @@ const ProductDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Related Products Section */}
+          {getRelatedProducts().length > 0 && (
+            <div className="mt-16 pt-8 border-t border-gray-200">
+              <h2 className="text-2xl text-[#484848] font-poppins font-medium mb-8">
+                Related Products
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {getRelatedProducts().map((relatedProduct) => (
+                  <Link
+                    key={relatedProduct._id}
+                    to={`/product/${relatedProduct._id}`}
+                    className="group block bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-black transition-all duration-300 hover:shadow-lg"
+                  >
+                    <div className="aspect-square bg-gray-50 p-4 flex items-center justify-center">
+                      <img
+                        src={relatedProduct.images}
+                        alt={relatedProduct.name}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-sm text-[#484848] font-poppins font-medium mb-2 line-clamp-2 group-hover:text-black transition-colors">
+                        {relatedProduct.name}
+                      </h3>
+                      <div className="flex items-center gap-1 mb-2">
+                        {[...Array(Math.ceil(relatedProduct.star))].map((_, index) => (
+                          <FaStar key={index} size="0.75rem" color="#fca120" />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg text-[#484848] font-poppins font-semibold">
+                          ${relatedProduct.discountPrice}
+                        </span>
+                        <span className="text-sm text-[#8a8a8a] line-through">
+                          ${relatedProduct.originalPrice}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <Footer />
