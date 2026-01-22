@@ -8,8 +8,14 @@ import {
   FaDownload,
   FaEye,
 } from "react-icons/fa";
+import useAdminMeta from "../../hooks/useAdminMeta";
 
 const Dashboard = () => {
+  useAdminMeta(
+    'Dashboard - TechMart Admin',
+    'Admin dashboard overview with statistics, recent orders, and system analytics for TechMart e-commerce platform'
+  );
+
   const stats = [
     {
       title: "Total Products",

@@ -1,62 +1,39 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { FaArrowLeft, FaSave, FaUser, FaEnvelope, FaTrash, FaLock, FaHistory } from 'react-icons/fa'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { FaArrowLeft, FaSave } from 'react-icons/fa'
 import useAdminMeta from '../../../hooks/useAdminMeta';
 import { customerAPI } from '../../../api/customerAPI';
 
-const EditUser = () => {
+const AddUser = () => {
   const navigate = useNavigate()
-  const { id } = useParams()
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('profile')
-
+  
   useAdminMeta(
-    `Edit User ${id} - TechMart Admin`,
-    `Edit user details for customer ${id} in TechMart platform`
+    'Add User - TechMart Admin',
+    'Create new user account in TechMart platform'
   );
 
   const [formData, setFormData] = useState({
     username: '',
     name: '',
     email: '',
-    password: '',  // Dummy field for backend
+    password: '',
   })
 
-  // Load customer data
-  useEffect(() => {
-    fetchCustomer();
-  }, [id]);
-
-  const fetchCustomer = async () => {
-    try {
-      setLoading(true);
-      const response = await customerAPI.getCustomerById(id);
-      const customer = response.data.data;
-      
-      setFormData({
-        username: customer.username || '',
-        name: customer.name || '',
-        email: customer.email || '',
-        password: 'dummy123',  // Backend yêu cầu password
-      });
-    } catch (error) {
-      console.error('Error fetching customer:', error);
-      alert('Failed to load customer data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
     try {
-      await customerAPI.updateCustomer(id, formData);
-      alert('Customer updated successfully!');
+      setLoading(true);
+      await customerAPI.createCustomer(formData);
+      alert('Customer created successfully!');
       navigate('/admin/users');
     } catch (error) {
-      console.error('Error updating customer:', error);
-      alert('Failed to update customer');
+      console.error('Error creating customer:', error);
+      alert('Failed to create customer. Username or email may already exist.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -65,56 +42,23 @@ const EditUser = () => {
     setFormData({ ...formData, [name]: value })
   }
 
-  const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      try {
-        await customerAPI.deleteCustomer(id);
-        alert('Customer deleted successfully!');
-        navigate('/admin/users');
-      } catch (error) {
-        console.error('Error deleting customer:', error);
-        alert('Failed to delete customer');
-      }
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Loading customer data...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/admin/users')}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <FaArrowLeft size={20} />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Edit User</h1>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  User ID: {id}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium"
-              >
-                <FaTrash size={14} />
-                Delete User
-              </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/admin/users')}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <FaArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Add New User</h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Create a new customer account
+              </p>
             </div>
           </div>
         </div>
@@ -138,14 +82,16 @@ const EditUser = () => {
                   value={formData.username}
                   onChange={handleChange}
                   required
+                  placeholder="Enter username"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <p className="mt-1 text-xs text-gray-500">Unique username for login</p>
               </div>
 
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Name <span className="text-red-500">*</span>
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -153,6 +99,7 @@ const EditUser = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  placeholder="Enter full name"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -160,7 +107,7 @@ const EditUser = () => {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email <span className="text-red-500">*</span>
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -168,8 +115,28 @@ const EditUser = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  placeholder="user@example.com"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <p className="mt-1 text-xs text-gray-500">Must be a valid email address</p>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={6}
+                  placeholder="Enter password (min 6 characters)"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
               </div>
             </div>
           </div>
@@ -183,15 +150,17 @@ const EditUser = () => {
                 type="button"
                 onClick={() => navigate('/admin/users')}
                 className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                disabled={loading}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium"
+                disabled={loading}
+                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium disabled:opacity-50"
               >
                 <FaSave size={16} />
-                Save Changes
+                {loading ? 'Creating...' : 'Create User'}
               </button>
             </div>
           </div>
@@ -201,4 +170,4 @@ const EditUser = () => {
   )
 }
 
-export default EditUser
+export default AddUser

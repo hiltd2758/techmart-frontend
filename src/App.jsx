@@ -10,15 +10,20 @@ import LoginPage from "./Pages/auth/LoginPage.jsx";
 import RegisterPage from "./Pages/auth/RegisterPage.jsx";
 import ProductDetail from "./Components/ProductDetail/ProductDetail.jsx";
 import Account from "./Pages/Account/Account.jsx";
-import AdminLayout from './Components/Admin/AdminLayout.jsx'  
-import Dashboard from './Pages/Admin/Dashboard.jsx'  
-import ProductList from './Pages/Admin/Products/ProductList.jsx'  
-import AddProduct from './Pages/Admin/Products/AddProduct.jsx'  
-import EditProduct from './Pages/Admin/Products/EditProduct.jsx'
-import OrderList from './Pages/Admin/Orders/OrderList.jsx'
-import UserList from './Pages/Admin/Users/UserList.jsx'
-import EditUser from './Pages/Admin/Users/EditUser.jsx' // ← THÊM DÒNG NÀY
-import Settings from './Pages/Admin/Settings/Settings.jsx'
+import AdminLayout from "./Components/Admin/AdminLayout.jsx";
+import Dashboard from "./Pages/Admin/Dashboard.jsx";
+import ProductList from "./Pages/Admin/Products/ProductList.jsx";
+import AddProduct from "./Pages/Admin/Products/AddProduct.jsx";
+import EditProduct from "./Pages/Admin/Products/EditProduct.jsx";
+import OrderList from "./Pages/Admin/Orders/OrderList.jsx";
+import UserList from "./Pages/Admin/Users/UserList.jsx";
+import EditUser from "./Pages/Admin/Users/EditUser.jsx"; // ← THÊM DÒNG NÀY
+import Settings from "./Pages/Admin/Settings/Settings.jsx";
+import NotFoundPage from "./Pages/Errors/NotFoundPage";
+import ServerErrorPage from "./Pages/Errors/ServerErrorPage";
+
+import OrderHistory from "./Pages/Account/OrderHistory/OrderHistory";
+import AddUser from "./Pages/Admin/Users/AddUser.jsx"; 
 
 function App() {
   return (
@@ -89,18 +94,40 @@ function App() {
             </>
           }
         />
+        <Route
+          path="/account/order-history"
+          element={
+            <>
+              <OrderHistory />
+              <Footer />
+            </>
+          }
+        />
 
         {/* Admin routes */}
-        <Route path='/admin' element={<AdminLayout/>}>
-          <Route index element={<Dashboard/>} />
-          <Route path='products' element={<ProductList/>} />
-          <Route path='products/add' element={<AddProduct/>} />
-          <Route path='products/edit/:id' element={<EditProduct/>} />
-          <Route path='orders' element={<OrderList/>} />
-          <Route path='users' element={<UserList/>} />
-          <Route path='users/edit/:id' element={<EditUser/>} /> 
-          <Route path='settings' element={<Settings/>} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<ProductList />} />
+          <Route path="products/add" element={<AddProduct />} />
+          <Route path="users/add" element={<AddUser />} /> 
+          <Route path="products/edit/:id" element={<EditProduct />} />
+          <Route path="orders" element={<OrderList />} />
+          <Route path="users" element={<UserList />} />
+          <Route path="users/edit/:id" element={<EditUser />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
+
+        <Route path="/500" element={<ServerErrorPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+
+        <Route
+          path="/account/order-history"
+          element={
+            <>
+              <OrderHistory />
+            </>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { FaEye, FaSearch, FaTimes, FaShippingFast, FaCreditCard, FaMapMarkerAlt, FaEnvelope, FaPhone, FaPrint, FaDownload } from 'react-icons/fa'
+import useAdminMeta from '../../../hooks/useAdminMeta';
 
 const OrderList = () => {
+  useAdminMeta(
+    'Orders Management - TechMart Admin',
+    'View and manage customer orders in TechMart. Track order status, update shipping information, and handle returns'
+  );
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)

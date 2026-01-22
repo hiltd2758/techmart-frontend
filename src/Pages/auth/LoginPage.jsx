@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ← THÊM
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 
 const LoginPage = () => {
+  const navigate = useNavigate(); // ← THÊM
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -44,8 +46,10 @@ const LoginPage = () => {
       setIsLoading(true);
       setTimeout(() => {
         console.log("Login data:", formData);
-        alert("Login successful!");
+        const username = formData.email.split('@')[0];
+        localStorage.setItem("username", username);
         setIsLoading(false);
+        navigate('/account'); // ← THAY THẾ alert()
       }, 1500);
     } else {
       setErrors(newErrors);
@@ -163,8 +167,6 @@ const LoginPage = () => {
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </div>
-
-          
 
           {/* Footer */}
           <p className="text-center text-neutral-500 text-sm mt-8">

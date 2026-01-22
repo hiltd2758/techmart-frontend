@@ -16,9 +16,14 @@ import {
   FaSave,
   FaUndo,
 } from "react-icons/fa";
+import useAdminMeta from '../../../hooks/useAdminMeta';
 
 
 const Settings = () => {
+  useAdminMeta(
+    'Settings - TechMart Admin',
+    'Configure TechMart admin settings. Manage profile, security, preferences, notifications, and integrations'
+  );
   const [activeTab, setActiveTab] = useState("profile");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaSave, FaImage } from 'react-icons/fa'
+import useAdminMeta from '../../../hooks/useAdminMeta'
 
 const AddProduct = () => {
   const navigate = useNavigate()
+  useAdminMeta(
+    'Add New Product - TechMart Admin',
+    'Add new products to TechMart inventory. Configure product details, pricing, and specifications'
+  );
   const [formData, setFormData] = useState({
     name: '',
     category: '',

@@ -18,7 +18,9 @@ const AdminLayout = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const location = useLocation();
-
+ useEffect(() => {
+    document.title = 'TechMart Admin Dashboard';
+  }, []);
   const menuItems = [
     { path: "/admin", icon: FaTachometerAlt, label: "Dashboard", exact: true },
     { path: "/admin/products", icon: FaBox, label: "Products" },
