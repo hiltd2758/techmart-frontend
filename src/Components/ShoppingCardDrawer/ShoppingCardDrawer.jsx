@@ -1,5 +1,5 @@
 import React from "react";
-import ProductCard from "../ProductCard/ProductCard.jsx";
+import ProductCard from "../ProductCardDrawer/ProductCardDrawer.jsx";
 import TotalCart from "../TotalCart/TotalCart.jsx";
 import { useState, useEffect } from "react";
 
