@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 
 const ProductList = () => {
@@ -71,38 +70,35 @@ const ProductList = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-medium text-gray-900">Products</h1>
+          <p className="text-gray-500 mt-1 text-sm">
             Manage your product inventory and pricing
           </p>
         </div>
-        <Link
-          to="/admin/products/add"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-        >
-          <FaPlus size={16} />
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
+          <FaPlus size={14} />
           Add Product
-        </Link>
+        </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
             <input
               type="text"
               placeholder="Search products or SKU..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             />
           </div>
 
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
           >
             <option value="all">All Categories</option>
             <option value="Laptops">Laptops</option>
@@ -113,7 +109,7 @@ const ProductList = () => {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent bg-white"
           >
             <option value="all">All Status</option>
             <option value="Active">Active</option>
@@ -124,27 +120,27 @@ const ProductList = () => {
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
                   Product
                 </th>
-                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
                   Category
                 </th>
-                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
                   Price
                 </th>
-                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
                   Stock
                 </th>
-                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
                   Status
                 </th>
-                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
                   Actions
                 </th>
               </tr>
@@ -161,28 +157,28 @@ const ProductList = () => {
                         <img
                           src={product.image}
                           alt={product.name}
-                          className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                          className="w-11 h-11 rounded object-cover border border-gray-200"
                         />
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-sm text-gray-900">
                             {product.name}
                           </p>
-                          <p className="text-sm text-gray-500">{product.sku}</p>
+                          <p className="text-xs text-gray-500 font-mono mt-0.5">{product.sku}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-gray-600">
+                    <td className="py-4 px-6 text-sm text-gray-700">
                       {product.category}
                     </td>
                     <td className="py-4 px-6">
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-sm text-gray-900">
                         ${product.price.toLocaleString()}
                       </span>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`font-medium ${
+                          className={`font-medium text-sm ${
                             product.stock === 0
                               ? "text-red-600"
                               : product.stock < 20
@@ -193,7 +189,7 @@ const ProductList = () => {
                           {product.stock}
                         </span>
                         {product.stock === 0 && (
-                          <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                          <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded font-medium">
                             Low
                           </span>
                         )}
@@ -202,12 +198,12 @@ const ProductList = () => {
                     <td className="py-4 px-6">
                       <span
                         className={`
-                        inline-flex px-3 py-1 text-xs font-medium rounded-full
+                        inline-flex px-2.5 py-1 text-xs font-medium rounded
                         ${
                           product.status === "Active"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-green-50 text-green-700"
                             : product.status === "Out of Stock"
-                            ? "bg-red-100 text-red-700"
+                            ? "bg-red-50 text-red-700"
                             : "bg-gray-100 text-gray-700"
                         }
                       `}
@@ -216,19 +212,18 @@ const ProductList = () => {
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          to={`/admin/products/edit/${product.id}`}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      <div className="flex items-center gap-1">
+                        <button
+                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Edit product"
                         >
-                          <FaEdit size={16} />
-                        </Link>
+                          <FaEdit size={15} />
+                        </button>
                         <button
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Delete product"
                         >
-                          <FaTrash size={16} />
+                          <FaTrash size={15} />
                         </button>
                       </div>
                     </td>
@@ -236,8 +231,8 @@ const ProductList = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="py-8 px-6 text-center">
-                    <p className="text-gray-600">
+                  <td colSpan="6" className="py-12 px-6 text-center">
+                    <p className="text-sm text-gray-500">
                       No products found matching your filters
                     </p>
                   </td>
@@ -248,22 +243,22 @@ const ProductList = () => {
         </div>
 
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <p className="text-sm text-gray-600">
             Showing 1 to {filteredProducts.length} of {products.length} products
           </p>
           <div className="flex gap-2">
             <button
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
             >
               Previous
             </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
+            <button className="px-3 py-1.5 text-sm bg-gray-900 text-white rounded-lg font-medium">
               1
             </button>
             <button
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled
             >
               Next

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { customerAPI } from '../../api/customerAPI';
+import { addressAPI } from '../../api/addressAPI';
 import {
   FaUser,
   FaShoppingBag,
@@ -20,15 +22,194 @@ import {
   FaStar,
   FaChevronRight,
   FaRedo,
+  FaChartLine,
 } from 'react-icons/fa';
 import HomeNavbar from '../../Components/HomeNavbar/HomeNavbar';
 import Footer from '../../Components/Footer/Footer.jsx';
 
 const Account = () => {
   const [activeTab, setActiveTab] = useState('orders');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [addresses, setAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Sample user data
-  const user = {
+  useEffect(() => {
+    fetchUserProfile();
+    fetchUserAddresses();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Lấy username từ localStorage
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        throw new Error('User not authenticated. Please login again.');
+      }
+      
+      const parsedUserData = JSON.parse(userData);
+      const { username } = parsedUserData;
+      
+      if (!username) {
+        throw new Error('Username not found. Please login again.');
+      }
+      
+      const response = await customerAPI.getMyProfile(username);
+      
+      // Check response status
+      if (!response.data || !response.data.data) {
+        throw new Error('Invalid response from server');
+      }
+      
+      const apiUserData = response.data.data;
+      
+      // Map backend data ke frontend data structure
+      setUser({
+        name: apiUserData.name,
+        email: apiUserData.email,
+        phone: apiUserData.phone || 'Not provided',
+        joinDate: new Date(apiUserData.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+        }),
+        addresses: [],
+      });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      
+      // Menentukan error message yang sesuai
+      let errorMessage = 'Failed to load profile';
+      
+      if (error.response?.status === 404) {
+        errorMessage = 'User profile not found. Please contact support.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Session expired. Please login again.';
+        localStorage.clear();
+        window.location.href = '/login';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      
+      // Fallback data jika gagal
+      setUser({
+        name: 'User',
+        email: 'user@example.com',
+        phone: 'Not provided',
+        joinDate: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+        }),
+        addresses: [],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch addresses dari API
+  const fetchUserAddresses = async () => {
+    try {
+      setLoadingAddresses(true);
+      const response = await addressAPI.getUserAddresses();
+      const userAddresses = response.data.data;
+
+      // Fetch chi tiết addresses từ location service
+      if (userAddresses && userAddresses.length > 0) {
+        const addressIds = userAddresses.map(ua => ua.addressId);
+        const addressDetailsResponse = await addressAPI.getAddressesByIds(addressIds);
+        const addressDetails = addressDetailsResponse.data.data;
+
+        // Map dữ liệu
+        const mappedAddresses = userAddresses.map(ua => {
+          const detail = addressDetails.find(ad => ad.id === ua.addressId);
+          return {
+            id: ua.id,
+            userAddressId: ua.id,
+            addressId: ua.addressId,
+            type: 'Home', // Có thể thêm field này vào backend
+            name: user?.name || 'User',
+            street: detail?.street || '',
+            ward: detail?.ward || '',
+            district: detail?.district || '',
+            city: detail?.city || '',
+            province: detail?.province || '',
+            postalCode: detail?.postalCode || '',
+            phone: user?.phone || '',
+            isDefault: ua.isDefault,
+          };
+        });
+
+        setAddresses(mappedAddresses);
+        
+        // Update user state với addresses
+        setUser(prev => ({ ...prev, addresses: mappedAddresses }));
+      }
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  // Handle set default address
+  const handleSetDefaultAddress = async (userAddressId) => {
+    try {
+      await addressAPI.setDefaultAddress(userAddressId);
+      
+      // Update local state
+      setAddresses(prev =>
+        prev.map(addr => ({
+          ...addr,
+          isDefault: addr.userAddressId === userAddressId,
+        }))
+      );
+      
+      setUser(prev => ({
+        ...prev,
+        addresses: prev.addresses.map(addr => ({
+          ...addr,
+          isDefault: addr.userAddressId === userAddressId,
+        })),
+      }));
+
+      alert('Default address updated successfully!');
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      alert('Failed to update default address');
+    }
+  };
+
+  // Handle delete address
+  const handleDeleteAddress = async (userAddressId) => {
+    if (!window.confirm('Are you sure you want to delete this address?')) {
+      return;
+    }
+
+    try {
+      await addressAPI.deleteUserAddress(userAddressId);
+      
+      // Update local state
+      setAddresses(prev => prev.filter(addr => addr.userAddressId !== userAddressId));
+      setUser(prev => ({
+        ...prev,
+        addresses: prev.addresses.filter(addr => addr.userAddressId !== userAddressId),
+      }));
+
+      alert('Address deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      alert('Failed to delete address');
+    }
+  };
+
+  // Sample user data - BACKUP (untuk orders yang masih menggunakan mock)
+  const mockUser = {
     name: 'John Doe',
     email: 'john.doe@example.com',
     phone: '+1 234 567 8900',
@@ -137,7 +318,7 @@ const Account = () => {
 
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const InfoCard = ({ icon: Icon, label, textColor, colorClass, value }) => (
+  const InfoCard = ({ icon: Icon, label, textColor, colorClass, value, isLoading = false }) => (
     <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
       <div className="flex items-center gap-3 mb-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}>
@@ -145,7 +326,11 @@ const Account = () => {
         </div>
         <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">{label}</label>
       </div>
-      <p className="text-gray-900 font-bold text-lg">{value}</p>
+      {isLoading ? (
+        <div className="h-6 bg-gray-200 rounded-md animate-pulse"></div>
+      ) : (
+        <p className="text-gray-900 font-bold text-lg">{value}</p>
+      )}
     </div>
   );
 
@@ -174,7 +359,7 @@ const Account = () => {
     </button>
   );
 
-  const AddressCard = ({ address, onSetDefault }) => (
+  const AddressCard = ({ address, onSetDefault, onDelete }) => (
     <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 relative hover:shadow-xl hover:border-gray-200 transition-all duration-300 group">
       {address.isDefault && (
         <span className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
@@ -194,24 +379,51 @@ const Account = () => {
       </div>
       <div className="space-y-2 text-sm text-gray-600 mb-6 pl-1">
         <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">Street:</span> <span className="font-medium">{address.street}</span>
+          <span className="font-semibold text-gray-500 min-w-[60px]">Street:</span> 
+          <span className="font-medium">{address.street}</span>
+        </p>
+        {address.ward && (
+          <p className="flex items-start gap-2">
+            <span className="font-semibold text-gray-500 min-w-[60px]">Ward:</span> 
+            <span className="font-medium">{address.ward}</span>
+          </p>
+        )}
+        <p className="flex items-start gap-2">
+          <span className="font-semibold text-gray-500 min-w-[60px]">District:</span> 
+          <span className="font-medium">{address.district}</span>
         </p>
         <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">City:</span>{' '}
-          <span className="font-medium">
-            {address.city}, {address.state}
-          </span>
+          <span className="font-semibold text-gray-500 min-w-[60px]">City:</span> 
+          <span className="font-medium">{address.city}, {address.province}</span>
         </p>
+        {address.postalCode && (
+          <p className="flex items-start gap-2">
+            <span className="font-semibold text-gray-500 min-w-[60px]">Postal:</span> 
+            <span className="font-medium">{address.postalCode}</span>
+          </p>
+        )}
         <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">Phone:</span> <span className="font-medium">{address.phone}</span>
+          <span className="font-semibold text-gray-500 min-w-[60px]">Phone:</span> 
+          <span className="font-medium">{address.phone}</span>
         </p>
       </div>
       <div className="flex gap-3 pt-4 border-t-2 border-gray-100">
         {!address.isDefault && (
-          <ActionButton icon={FaCheckCircle} label="Set Default" colorClasses="green" onClick={() => onSetDefault(address.id)} />
+          <button
+            onClick={() => onSetDefault(address.userAddressId)}
+            className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:border-green-900 hover:bg-green-50 transition-all duration-300 cursor-pointer whitespace-nowrap"
+          >
+            <FaCheckCircle />
+            Set Default
+          </button>
         )}
-        <ActionButton icon={FaEdit} label="Edit" colorClasses="gray" />
-        <ActionButton icon={FaTrash} label="Delete" colorClasses="red" />
+        <button
+          onClick={() => onDelete(address.userAddressId)}
+          className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-red-200 text-red-700 font-semibold rounded-xl hover:border-red-900 hover:bg-red-50 transition-all duration-300 cursor-pointer whitespace-nowrap"
+        >
+          <FaTrash />
+          Delete
+        </button>
       </div>
     </div>
   );
@@ -331,8 +543,8 @@ const Account = () => {
                   </div>
                   {/* Info */}
                   <div className="py-4 space-y-4">
-                    {user.addresses
-                      .filter((address) => address.id === selectedOrder.addressId)
+                    {user?.addresses
+                      ?.filter((address) => address.id === selectedOrder.addressId)
                       .map((address) => (
                         <div key={address.id}>
                           <p className="font-semibold text-gray-900 mb-1">
@@ -342,7 +554,7 @@ const Account = () => {
                             {address.street}, {address.city}, {address.state}
                           </p>
                         </div>
-                      ))}
+                      )) || <p className="text-gray-500">Address not found</p>}
                   </div>
                   {/* Order Items */}
                   <div className="border-t border-b border-gray-100 py-4 space-y-4">
@@ -375,81 +587,97 @@ const Account = () => {
     </div>
   );
 
-  const PersonalInfoSection = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-3xl text-gray-900 font-poppins font-bold">Personal Information</h2>
-          <p className="text-gray-500 mt-1">Manage your personal details</p>
-        </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
-          <FaEdit />
-          Edit Profile
-        </button>
-      </div>
-
-      <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 hover:shadow-xl hover:border-gray-200 transition-all duration-300">
-        {/* Profile Header */}
-        <div className="flex items-center gap-6 pb-8 mb-8 border-b-2 border-gray-100">
-          <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-              <FaUser className="text-white text-3xl" />
+  const PersonalInfoSection = () => {
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+          <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 space-y-6">
+            <div className="h-32 bg-gray-100 rounded-xl animate-pulse"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
+              ))}
             </div>
-            <span className="text-sm font-medium text-gray-500">Completed</span>
-          </div>
-          <div className="text-3xl font-bold text-gray-900">
-            {orders.filter((o) => o.status === "delivered").length}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            Successfully delivered
           </div>
         </div>
+      );
+    }
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-              <FaChartLine className="text-xl text-purple-600" />
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-3xl text-gray-900 font-poppins font-bold">Personal Information</h2>
+            <p className="text-gray-500 mt-1">Manage your personal details</p>
+          </div>
+          <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
+            <FaEdit />
+            Edit Profile
+          </button>
+        </div>
+
+        <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 hover:shadow-xl hover:border-gray-200 transition-all duration-300">
+          {/* Profile Header */}
+          <div className="flex items-center gap-6 pb-8 mb-8 border-b-2 border-gray-100">
+            <div className="relative">
+              <div className="w-24 h-24 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
+                <FaUser className="text-white text-3xl" />
+              </div>
+              <span className="text-sm font-medium text-gray-500">Completed</span>
             </div>
-            <span className="text-sm font-medium text-gray-500">
-              Total Spent
-            </span>
+            <div className="text-3xl font-bold text-gray-900">
+              {orders.filter((o) => o.status === "delivered").length}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              Successfully delivered
+            </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900">
-            $
-            {orders
-              .reduce((sum, order) => sum + order.total, 0)
-              .toLocaleString()}
+
+          <div className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                <FaChartLine className="text-xl text-purple-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-500">
+                Total Spent
+              </span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              $
+              {orders
+                .reduce((sum, order) => sum + order.total, 0)
+                .toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">Lifetime value</div>
           </div>
-          <div className="text-sm text-gray-500 mt-1">Lifetime value</div>
+
+          {/* Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoCard icon={FaUser} label="Full Name" textColor="text-blue-600" colorClass="bg-blue-100" value={user?.name} isLoading={loading} />
+            <InfoCard icon={FaEnvelope} label="Email" textColor="text-purple-600" colorClass="bg-purple-100" value={user?.email} isLoading={loading} />
+            <InfoCard icon={FaCalendar} label="Member Since" textColor="text-orange-600" colorClass="bg-orange-100" value={user?.joinDate} isLoading={loading} />
+          </div>
+
+          {/* Account Stats */}
+          <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t-2 border-gray-100">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-gray-900 mb-1">{orders.length}</p>
+              <p className="text-sm text-gray-500 font-medium">Total Orders</p>
+            </div>
+            <div className="text-center border-x-2 border-gray-100">
+              <p className="text-3xl font-bold text-gray-900 mb-1">{user?.addresses?.length || 0}</p>
+              <p className="text-sm text-gray-500 font-medium">Saved Addresses</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-green-600 mb-1">${orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}</p>
+              <p className="text-sm text-gray-500 font-medium">Total Spent</p>
+            </div>
+          </div>
         </div>
       </div>
-
-        {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InfoCard icon={FaUser} label="Full Name" textColor="text-blue-600" colorClass="bg-blue-100" value={user.name} />
-          <InfoCard icon={FaEnvelope} label="Email" textColor="text-purple-600" colorClass=" bg-purple-100" value={user.email} />
-          <InfoCard icon={FaPhone} label="Phone" textColor="text-green-600" colorClass=" bg-green-100" value={user.phone} />
-          <InfoCard icon={FaCalendar} label="Member Since" textColor="text-orange-600" colorClass=" bg-orange-100" value={user.joinDate} />
-        </div>
-
-        {/* Account Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t-2 border-gray-100">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-gray-900 mb-1">{orders.length}</p>
-            <p className="text-sm text-gray-500 font-medium">Total Orders</p>
-          </div>
-          <div className="text-center border-x-2 border-gray-100">
-            <p className="text-3xl font-bold text-gray-900 mb-1">{user.addresses.length}</p>
-            <p className="text-sm text-gray-500 font-medium">Saved Addresses</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-green-600 mb-1">${orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}</p>
-            <p className="text-sm text-gray-500 font-medium">Total Spent</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const AddressesSection = () => (
     <div className="space-y-6">
@@ -464,11 +692,30 @@ const Account = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {user.addresses.map((address) => (
-          <AddressCard key={address.id} address={address} />
-        ))}
-      </div>
+      {loadingAddresses ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-64 bg-gray-100 rounded-2xl animate-pulse"></div>
+          ))}
+        </div>
+      ) : addresses.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {addresses.map((address) => (
+            <AddressCard 
+              key={address.userAddressId} 
+              address={address}
+              onSetDefault={handleSetDefaultAddress}
+              onDelete={handleDeleteAddress}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="col-span-full text-center py-12 bg-white border-2 border-gray-100 rounded-2xl">
+          <FaMapMarkerAlt className="text-6xl text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg mb-2">No addresses found</p>
+          <p className="text-gray-400 text-sm">Add your first shipping address</p>
+        </div>
+      )}
     </div>
   );
 
@@ -489,6 +736,26 @@ const Account = () => {
     <>
       <HomeNavbar />
       <div className="w-full bg-gradient-to-b from-gray-50 to-white pt-[70px] pb-20 min-h-screen">
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-50 border-b-2 border-red-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-red-600 text-lg">⚠️</div>
+                  <p className="text-red-700 font-medium">{error}</p>
+                </div>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-red-400 hover:text-red-600 text-xl"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Sidebar */}
@@ -504,8 +771,17 @@ const Account = () => {
                       <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
                     </div>
                     <div>
-                      <h3 className="font-poppins font-bold text-xl text-gray-900 mb-1">{user.name}</h3>
-                      <p className="text-sm text-gray-500 font-medium">{user.email}</p>
+                      {loading ? (
+                        <>
+                          <div className="h-6 bg-gray-200 rounded-md animate-pulse mb-2 w-32"></div>
+                          <div className="h-4 bg-gray-200 rounded-md animate-pulse w-40"></div>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="font-poppins font-bold text-xl text-gray-900 mb-1">{user?.name || 'User'}</h3>
+                          <p className="text-sm text-gray-500 font-medium">{user?.email || 'user@example.com'}</p>
+                        </>
+                      )}
                     </div>
                   </div>
 

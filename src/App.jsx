@@ -17,13 +17,20 @@ import AddProduct from "./Pages/Admin/Products/AddProduct.jsx";
 import EditProduct from "./Pages/Admin/Products/EditProduct.jsx";
 import OrderList from "./Pages/Admin/Orders/OrderList.jsx";
 import UserList from "./Pages/Admin/Users/UserList.jsx";
-import EditUser from "./Pages/Admin/Users/EditUser.jsx"; // ← THÊM DÒNG NÀY
+import EditUser from "./Pages/Admin/Users/EditUser.jsx";
+import CountryList from "./Pages/Admin/Countries/CountryList.jsx";
+import AddCountry from "./Pages/Admin/Countries/AddCountry.jsx";
+import EditCountry from "./Pages/Admin/Countries/EditCountry.jsx";
 import Settings from "./Pages/Admin/Settings/Settings.jsx";
 import NotFoundPage from "./Pages/Errors/NotFoundPage";
 import ServerErrorPage from "./Pages/Errors/ServerErrorPage";
 
 import OrderHistory from "./Pages/Account/OrderHistory/OrderHistory";
-import AddUser from "./Pages/Admin/Users/AddUser.jsx"; 
+import AddUser from "./Pages/Admin/Users/AddUser.jsx";
+import Payment from "./Pages/Payment/Payment.jsx";
+import PrivateRoute from "./Components/Auth/PrivateRoute.jsx";
+import AdminRoute from "./Components/Auth/AdminRoute.jsx";
+
 
 function App() {
   return (
@@ -88,46 +95,47 @@ function App() {
         />
         <Route
           path="/account"
-          element={
+          element={<PrivateRoute />}
+        >
+          <Route index element={
             <>
               <Account />
             </>
-          }
-        />
-        <Route
-          path="/account/order-history"
-          element={
-            <>
-              <OrderHistory />
-              <Footer />
-            </>
-          }
-        />
+          } />
+          <Route
+            path="order-history"
+            element={
+              <>
+                <OrderHistory />
+                <Footer />
+              </>
+            }
+          />
+        </Route>
 
-        {/* Admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<ProductList />} />
-          <Route path="products/add" element={<AddProduct />} />
-          <Route path="users/add" element={<AddUser />} /> 
-          <Route path="products/edit/:id" element={<EditProduct />} />
-          <Route path="orders" element={<OrderList />} />
-          <Route path="users" element={<UserList />} />
-          <Route path="users/edit/:id" element={<EditUser />} />
-          <Route path="settings" element={<Settings />} />
+        <Route path="/payment" element={<PrivateRoute />}>
+          <Route index element={<Payment />} />
+        </Route>
+
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<ProductList />} />
+            <Route path="products/add" element={<AddProduct />} />
+            <Route path="users/add" element={<AddUser />} />
+            <Route path="products/edit/:id" element={<EditProduct />} />
+            <Route path="orders" element={<OrderList />} />
+            <Route path="users" element={<UserList />} />
+            <Route path="users/edit/:id" element={<EditUser />} />
+            <Route path="countries" element={<CountryList />} />
+            <Route path="countries/add" element={<AddCountry />} />
+            <Route path="countries/edit/:id" element={<EditCountry />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
         </Route>
 
         <Route path="/500" element={<ServerErrorPage />} />
         <Route path="*" element={<NotFoundPage />} />
-
-        <Route
-          path="/account/order-history"
-          element={
-            <>
-              <OrderHistory />
-            </>
-          }
-        />
       </Routes>
     </BrowserRouter>
   );

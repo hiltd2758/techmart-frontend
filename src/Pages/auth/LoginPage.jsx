@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ← THÊM
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { FaLock, FaEye, FaEyeSlash, FaUser } from "react-icons/fa";
+import { authAPI } from "../../api/customerAPI";
+import { useAuth } from "../../Context/AuthContext";
 
 const LoginPage = () => {
-  const navigate = useNavigate(); // ← THÊM
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
     rememberMe: false,
   });
@@ -26,10 +29,8 @@ const LoginPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+    if (!formData.username) {
+      newErrors.username = "Username is required";
     }
     if (!formData.password) {
       newErrors.password = "Password is required";
@@ -39,18 +40,65 @@ const LoginPage = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
+
     if (Object.keys(newErrors).length === 0) {
       setIsLoading(true);
-      setTimeout(() => {
-        console.log("Login data:", formData);
-        const username = formData.email.split('@')[0];
-        localStorage.setItem("username", username);
+      try {
+        // Call login API - returns ApiResponse<LoginResponseDTO>
+        const response = await authAPI.login(formData.username, formData.password);
+
+        // Backend structure: { status, message, data: LoginResponseDTO }
+        const userData = response.data.data;
+
+        console.log('Login success:', userData); // Debug log
+
+        // Store via AuthContext
+        login(
+          userData.token,           // accessToken
+          userData.refreshToken,    // refreshToken
+          {
+            username: userData.username,
+            email: userData.email,
+            name: userData.name,
+            roles: userData.roles || [],
+            avatar: null,           // Backend không có avatar field
+            oauthId: userData.oauthId
+          }
+        );
+
+        // Navigate based on role
+        if (userData.roles?.includes("ADMIN")) {
+          navigate("/admin");
+        } else {
+          navigate("/account");
+        }
+
+      } catch (error) {
+        console.error("Login failed:", error);
+
+        let errorMessage = "Invalid username or password";
+
+        if (error.response) {
+          const status = error.response.status;
+
+          if (status === 401) {
+            errorMessage = "Invalid username or password";
+          } else if (status === 403) {
+            errorMessage = "Account not verified. Please check your email.";
+          } else if (error.response.data?.message) {
+            errorMessage = error.response.data.message;
+          }
+        } else if (error.code === 'ERR_NETWORK') {
+          errorMessage = "Network error. Please check your connection.";
+        }
+
+        setErrors({ submit: errorMessage });
+      } finally {
         setIsLoading(false);
-        navigate('/account'); // ← THAY THẾ alert()
-      }, 1500);
+      }
     } else {
       setErrors(newErrors);
     }
@@ -72,34 +120,33 @@ const LoginPage = () => {
 
           {/* Form */}
           <div className="space-y-6">
-            {/* Email Field */}
+            {/* Username Field */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-medium text-neutral-700 mb-2"
               >
-                Email
+                Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaEnvelope className="text-neutral-400 text-sm" />
+                  <FaUser className="text-neutral-400 text-sm" />
                 </div>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
-                  placeholder="you@example.com"
-                  className={`w-full pl-10 pr-3 py-2.5 border ${
-                    errors.email
-                      ? "border-red-400 bg-red-50"
-                      : "border-neutral-300 bg-white focus:border-neutral-900"
-                  } focus:outline-none`}
+                  placeholder="johndoe"
+                  className={`w-full pl-10 pr-3 py-2.5 border ${errors.username
+                    ? "border-red-400 bg-red-50"
+                    : "border-neutral-300 bg-white focus:border-neutral-900"
+                    } focus:outline-none`}
                 />
               </div>
-              {errors.email && (
-                <p className="text-red-600 text-xs mt-2">{errors.email}</p>
+              {errors.username && (
+                <p className="text-red-600 text-xs mt-2">{errors.username}</p>
               )}
             </div>
 
@@ -122,18 +169,21 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className={`w-full pl-10 pr-10 py-2.5 border ${
-                    errors.password
-                      ? "border-red-400 bg-red-50"
-                      : "border-neutral-300 bg-white focus:border-neutral-900"
-                  } focus:outline-none`}
+                  className={`w-full pl-10 pr-10 py-2.5 border ${errors.password
+                    ? "border-red-400 bg-red-50"
+                    : "border-neutral-300 bg-white focus:border-neutral-900"
+                    } focus:outline-none`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-700"
                 >
-                  {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                  {showPassword ? (
+                    <FaEyeSlash className="text-sm" />
+                  ) : (
+                    <FaEye className="text-sm" />
+                  )}
                 </button>
               </div>
               {errors.password && (
@@ -157,6 +207,13 @@ const LoginPage = () => {
                 Forgot password?
               </a>
             </div>
+
+            {/* Error Message */}
+            {errors.submit && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm">
+                {errors.submit}
+              </div>
+            )}
 
             {/* Sign In Button */}
             <button

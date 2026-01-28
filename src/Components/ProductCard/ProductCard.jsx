@@ -1,8 +1,11 @@
 import React from "react";
 import { FaStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { useCart } from "../../Context/CartContext";
 
 const ProductCard = ({ product }) => {
+  const { addToCart } = useCart();
+
   return (
     <div className="bg-white shadow-lg rounded-md hover:shadow-xl transition-shadow h-full flex flex-col">
       {/* Image container */}
@@ -54,13 +57,21 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        {/* Button */}
-        <Link
-          to={`/product/${product._id}`}
-          className="text-base text-white font-poppins font-medium capitalize px-6 py-2.5 bg-black rounded-lg w-full flex items-center justify-center hover:bg-gray-800 transition-colors"
-        >
-          View Details
-        </Link>
+        {/* Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => addToCart(product)}
+            className="flex-1 text-base text-white font-poppins font-medium capitalize px-4 py-2.5 bg-[#fca120] rounded-lg flex items-center justify-center hover:bg-[#e08e1a] transition-colors"
+          >
+            Add to Cart
+          </button>
+          <Link
+            to={`/product/${product._id}`}
+            className="flex-1 text-base text-white font-poppins font-medium capitalize px-4 py-2.5 bg-black rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
+          >
+            Details
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import NewArrival from "../../Components/NewArrival/NewArrival.jsx";
 import Blinder from "../../Components/Blinder/Blinder.jsx";
 import FollowUs from "../../Components/FollowUs/FollowUs.jsx";
 import Testimonial from "../../Components/Testimonial/Testimonial.jsx";
-import ShoppingCardDrawer from "../../Components/shoppingCardDrawer/shoppingCardDrawer.jsx";
+import ShoppingCardDrawer from "../../Components/ShoppingCardDrawer/ShoppingCardDrawer.jsx";
 import Footer from "../../Components/Footer/Footer.jsx";
 const Home = () => {
   return (

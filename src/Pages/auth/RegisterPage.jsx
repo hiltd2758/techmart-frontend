@@ -8,7 +8,7 @@ import {
   FaEyeSlash,
   FaTimes,
 } from "react-icons/fa";
-import { customerAPI } from "../../api/customerAPI"; // Import API
+import { authAPI } from "../../api/customerAPI";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -62,16 +62,12 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await customerAPI.createGuestUser({
+      await authAPI.signup({
         username: formData.username,
         password: formData.password,
         name: formData.name,
         email: formData.email,
       });
-
-      console.log("Registration successful:", response.data);
-      // Save username to localStorage
-      localStorage.setItem("username", formData.username);
       alert("Registration successful! Please login.");
       navigate("/login");
     } catch (error) {

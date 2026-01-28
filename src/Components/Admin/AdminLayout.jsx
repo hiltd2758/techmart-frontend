@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaBox,
@@ -12,20 +12,55 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { useState, useRef, useEffect } from "react";
+import { authAPI } from "../../api/customerAPI";
 
 const AdminLayout = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
   const location = useLocation();
- useEffect(() => {
+  useEffect(() => {
     document.title = 'TechMart Admin Dashboard';
   }, []);
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+
+    try {
+      await authAPI.logout();
+
+      // Clear all auth data
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+
+      // Redirect to login
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout API failed:', error);
+
+      // Even if API fails, clear local data and redirect
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      navigate('/login');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
   const menuItems = [
     { path: "/admin", icon: FaTachometerAlt, label: "Dashboard", exact: true },
     { path: "/admin/products", icon: FaBox, label: "Products" },
     { path: "/admin/orders", icon: FaShoppingCart, label: "Orders" },
     { path: "/admin/users", icon: FaUsers, label: "Users" },
+    { path: "/admin/countries", icon: FaBox, label: "Countries" },
     { path: "/admin/settings", icon: FaCog, label: "Settings" },
   ];
 
@@ -46,7 +81,7 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-white overflow-hidden">
       {/* Sidebar */}
       <aside
         className={`
@@ -58,16 +93,16 @@ const AdminLayout = () => {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">T</span>
+            <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-semibold text-lg">T</span>
             </div>
-            <span className="text-xl font-semibold text-gray-900 tracking-tight">
+            <span className="text-lg font-semibold text-gray-900 tracking-tight">
               TechMart
             </span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-500 hover:text-gray-700"
+            className="lg:hidden text-gray-400 hover:text-gray-600 transition-colors"
           >
             <FaTimes size={20} />
           </button>
@@ -82,19 +117,17 @@ const AdminLayout = () => {
               className={`
                 flex items-center px-4 py-3 text-sm font-medium rounded-lg
                 transition-all duration-200
-                ${
-                  isActive(item.path, item.exact)
-                    ? "bg-blue-50 text-blue-700 shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                ${isActive(item.path, item.exact)
+                  ? "bg-teal-50 text-teal-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }
               `}
             >
               <item.icon
-                className={`mr-3 text-lg ${
-                  isActive(item.path, item.exact)
-                    ? "text-blue-600"
+                className={`mr-3 text-base ${isActive(item.path, item.exact)
+                    ? "text-teal-600"
                     : "text-gray-400"
-                }`}
+                  }`}
               />
               {item.label}
             </Link>
@@ -103,9 +136,13 @@ const AdminLayout = () => {
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-200">
-          <button className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-            <FaSignOutAlt className="mr-3 text-lg" />
-            Logout
+          <button 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaSignOutAlt className="mr-3 text-base" />
+            {isLoggingOut ? 'Logging out...' : 'Logout'}
           </button>
         </div>
       </aside>
@@ -116,23 +153,23 @@ const AdminLayout = () => {
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden text-gray-500 hover:text-gray-700"
+            className="lg:hidden text-gray-400 hover:text-gray-600 transition-colors"
           >
             <FaBars size={20} />
           </button>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-4 flex-1 justify-center lg:justify-start">
+            <div className="hidden md:flex items-center px-4 py-2.5 bg-gray-50 rounded-lg border border-gray-200 w-96">
               <input
                 type="text"
                 placeholder="Search..."
-                className="bg-transparent border-none outline-none text-sm w-64"
+                className="bg-transparent border-none outline-none text-sm w-full placeholder-gray-400"
               />
             </div>
           </div>
 
           {/* Avatar Dropdown */}
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative ml-auto" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
@@ -142,14 +179,13 @@ const AdminLayout = () => {
                 <p className="text-xs text-gray-500">admin@techmart.com</p>
               </div>
 
-              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-sm">
                 A
               </div>
 
               <FaChevronDown
-                className={`w-3 h-3 text-gray-500 transition-transform duration-200 ${
-                  dropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -174,9 +210,13 @@ const AdminLayout = () => {
 
                 <div className="border-t border-gray-100 my-2"></div>
 
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150">
+                <button 
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   <FaSignOutAlt className="w-4 h-4" />
-                  <span>Logout</span>
+                  <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
               </div>
             )}
@@ -184,7 +224,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-8 bg-gray-50">
           <Outlet />
         </main>
       </div>
