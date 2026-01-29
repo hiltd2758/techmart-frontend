@@ -44,30 +44,27 @@ const Account = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Lấy username từ localStorage
+
       const userData = localStorage.getItem('user');
       if (!userData) {
         throw new Error('User not authenticated. Please login again.');
       }
-      
+
       const parsedUserData = JSON.parse(userData);
       const { username } = parsedUserData;
-      
+
       if (!username) {
         throw new Error('Username not found. Please login again.');
       }
-      
+
       const response = await customerAPI.getMyProfile(username);
-      
-      // Check response status
+
       if (!response.data || !response.data.data) {
         throw new Error('Invalid response from server');
       }
-      
+
       const apiUserData = response.data.data;
-      
-      // Map backend data ke frontend data structure
+
       setUser({
         name: apiUserData.name,
         email: apiUserData.email,
@@ -80,10 +77,9 @@ const Account = () => {
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      
-      // Menentukan error message yang sesuai
+
       let errorMessage = 'Failed to load profile';
-      
+
       if (error.response?.status === 404) {
         errorMessage = 'User profile not found. Please contact support.';
       } else if (error.response?.status === 401) {
@@ -93,10 +89,9 @@ const Account = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setError(errorMessage);
-      
-      // Fallback data jika gagal
+
       setUser({
         name: 'User',
         email: 'user@example.com',
@@ -112,27 +107,24 @@ const Account = () => {
     }
   };
 
-  // Fetch addresses dari API
   const fetchUserAddresses = async () => {
     try {
       setLoadingAddresses(true);
       const response = await addressAPI.getUserAddresses();
       const userAddresses = response.data.data;
 
-      // Fetch chi tiết addresses từ location service
       if (userAddresses && userAddresses.length > 0) {
         const addressIds = userAddresses.map(ua => ua.addressId);
         const addressDetailsResponse = await addressAPI.getAddressesByIds(addressIds);
         const addressDetails = addressDetailsResponse.data.data;
 
-        // Map dữ liệu
         const mappedAddresses = userAddresses.map(ua => {
           const detail = addressDetails.find(ad => ad.id === ua.addressId);
           return {
             id: ua.id,
             userAddressId: ua.id,
             addressId: ua.addressId,
-            type: 'Home', // Có thể thêm field này vào backend
+            type: 'Home',
             name: user?.name || 'User',
             street: detail?.street || '',
             ward: detail?.ward || '',
@@ -146,8 +138,6 @@ const Account = () => {
         });
 
         setAddresses(mappedAddresses);
-        
-        // Update user state với addresses
         setUser(prev => ({ ...prev, addresses: mappedAddresses }));
       }
     } catch (error) {
@@ -157,19 +147,17 @@ const Account = () => {
     }
   };
 
-  // Handle set default address
   const handleSetDefaultAddress = async (userAddressId) => {
     try {
       await addressAPI.setDefaultAddress(userAddressId);
-      
-      // Update local state
+
       setAddresses(prev =>
         prev.map(addr => ({
           ...addr,
           isDefault: addr.userAddressId === userAddressId,
         }))
       );
-      
+
       setUser(prev => ({
         ...prev,
         addresses: prev.addresses.map(addr => ({
@@ -185,7 +173,6 @@ const Account = () => {
     }
   };
 
-  // Handle delete address
   const handleDeleteAddress = async (userAddressId) => {
     if (!window.confirm('Are you sure you want to delete this address?')) {
       return;
@@ -193,8 +180,7 @@ const Account = () => {
 
     try {
       await addressAPI.deleteUserAddress(userAddressId);
-      
-      // Update local state
+
       setAddresses(prev => prev.filter(addr => addr.userAddressId !== userAddressId));
       setUser(prev => ({
         ...prev,
@@ -206,36 +192,6 @@ const Account = () => {
       console.error('Error deleting address:', error);
       alert('Failed to delete address');
     }
-  };
-
-  // Sample user data - BACKUP (untuk orders yang masih menggunakan mock)
-  const mockUser = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    joinDate: 'January 2024',
-    addresses: [
-      {
-        id: 1,
-        type: 'Home',
-        name: 'John Doe',
-        street: '123 Tech Street',
-        city: 'San Francisco',
-        state: 'CA',
-        phone: '+1 234 567 8900',
-        isDefault: true,
-      },
-      {
-        id: 2,
-        type: 'Office',
-        name: 'John Doe',
-        street: '456 Business Ave',
-        city: 'Palo Alto',
-        state: 'CA',
-        phone: '+1 234 567 8900',
-        isDefault: false,
-      },
-    ],
   };
 
   // Sample orders data
@@ -283,33 +239,33 @@ const Account = () => {
       delivered: {
         icon: FaCheckCircle,
         text: 'Delivered',
-        bgColor: 'bg-gradient-to-r from-green-50 to-emerald-50',
+        bgColor: 'bg-green-50',
         textColor: 'text-green-700',
-        borderColor: 'border-green-200',
+        borderColor: 'border-green-300',
         iconColor: 'text-green-600',
       },
       processing: {
         icon: FaBox,
         text: 'Processing',
-        bgColor: 'bg-gradient-to-r from-blue-50 to-cyan-50',
+        bgColor: 'bg-blue-50',
         textColor: 'text-blue-700',
-        borderColor: 'border-blue-200',
+        borderColor: 'border-blue-300',
         iconColor: 'text-blue-600',
       },
       shipped: {
         icon: FaTruck,
         text: 'Shipped',
-        bgColor: 'bg-gradient-to-r from-purple-50 to-pink-50',
+        bgColor: 'bg-purple-50',
         textColor: 'text-purple-700',
-        borderColor: 'border-purple-200',
+        borderColor: 'border-purple-300',
         iconColor: 'text-purple-600',
       },
       cancelled: {
         icon: FaTimesCircle,
         text: 'Cancelled',
-        bgColor: 'bg-gradient-to-r from-red-50 to-orange-50',
+        bgColor: 'bg-red-50',
         textColor: 'text-red-700',
-        borderColor: 'border-red-200',
+        borderColor: 'border-red-300',
         iconColor: 'text-red-600',
       },
     };
@@ -318,110 +274,72 @@ const Account = () => {
 
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const InfoCard = ({ icon: Icon, label, textColor, colorClass, value, isLoading = false }) => (
-    <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border-2 border-gray-100 hover:border-gray-300 transition-all duration-300">
+  const InfoCard = ({ icon: Icon, label, value, isLoading = false }) => (
+    <div className="bg-white p-6 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
       <div className="flex items-center gap-3 mb-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorClass}`}>
-          <Icon className={`${textColor}`} />
-        </div>
-        <label className="text-sm text-gray-500 font-semibold uppercase tracking-wider">{label}</label>
+        <Icon className="text-gray-400 text-lg" />
+        <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</label>
       </div>
       {isLoading ? (
-        <div className="h-6 bg-gray-200 rounded-md animate-pulse"></div>
+        <div className="h-6 bg-gray-100 rounded animate-pulse"></div>
       ) : (
-        <p className="text-gray-900 font-bold text-lg">{value}</p>
+        <p className="text-gray-900 font-semibold text-base">{value}</p>
       )}
     </div>
   );
 
   const OrderItemCard = ({ item }) => (
     <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4 flex-1">
-        <div className="w-16 h-16 bg-white rounded-lg border-2 border-gray-100 p-2 flex-shrink-0">
+      <div className="flex items-center gap-3 flex-1">
+        <div className="w-12 h-12 bg-gray-50 rounded p-1.5 flex-shrink-0">
           <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-gray-900 font-semibold truncate">{item.name}</p>
-          <p className="text-sm text-gray-500">x{item.quantity}</p>
+          <p className="text-gray-900 font-medium text-sm truncate">{item.name}</p>
+          <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
         </div>
       </div>
-      <span className="text-lg font-bold text-gray-900 whitespace-nowrap">${item.price}</span>
+      <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">${item.price}</span>
     </div>
   );
 
-  const ActionButton = ({ icon: Icon, label, colorClasses, onClick }) => (
-    <button
-      onClick={onClick}
-      className={`flex items-center justify-center gap-2 px-6 py-3 border-2 border-${colorClasses}-200 text-${colorClasses}-700 font-semibold rounded-xl hover:border-${colorClasses}-900 hover:bg-${colorClasses}-50 transition-all duration-300 cursor-pointer whitespace-nowrap`}
-    >
-      {Icon && <Icon />}
-      {label}
-    </button>
-  );
-
   const AddressCard = ({ address, onSetDefault, onDelete }) => (
-    <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 relative hover:shadow-xl hover:border-gray-200 transition-all duration-300 group">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
       {address.isDefault && (
-        <span className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+        <span className="inline-block bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded-full mb-4">
           Default
         </span>
       )}
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <FaMapMarkerAlt className="text-2xl text-blue-600" />
-          </div>
-          <div>
-            <h3 className="font-poppins font-bold text-xl text-gray-900 mb-1">{address.type}</h3>
-            <p className="text-gray-600 font-semibold">{address.name}</p>
-          </div>
+      <div className="mb-4">
+        <div className="flex items-center gap-3 mb-3">
+          <FaMapMarkerAlt className="text-gray-400 text-lg" />
+          <h3 className="font-semibold text-base text-gray-900">{address.type}</h3>
         </div>
+        <p className="text-gray-700 text-sm font-medium mb-1">{address.name}</p>
       </div>
-      <div className="space-y-2 text-sm text-gray-600 mb-6 pl-1">
-        <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">Street:</span> 
-          <span className="font-medium">{address.street}</span>
-        </p>
-        {address.ward && (
-          <p className="flex items-start gap-2">
-            <span className="font-semibold text-gray-500 min-w-[60px]">Ward:</span> 
-            <span className="font-medium">{address.ward}</span>
-          </p>
-        )}
-        <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">District:</span> 
-          <span className="font-medium">{address.district}</span>
-        </p>
-        <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">City:</span> 
-          <span className="font-medium">{address.city}, {address.province}</span>
-        </p>
-        {address.postalCode && (
-          <p className="flex items-start gap-2">
-            <span className="font-semibold text-gray-500 min-w-[60px]">Postal:</span> 
-            <span className="font-medium">{address.postalCode}</span>
-          </p>
-        )}
-        <p className="flex items-start gap-2">
-          <span className="font-semibold text-gray-500 min-w-[60px]">Phone:</span> 
-          <span className="font-medium">{address.phone}</span>
-        </p>
+      <div className="space-y-1.5 text-sm text-gray-600 mb-6">
+        <p>{address.street}</p>
+        {address.ward && <p>{address.ward}</p>}
+        <p>{address.district}</p>
+        <p>{address.city}, {address.province}</p>
+        {address.postalCode && <p>{address.postalCode}</p>}
+        <p className="text-gray-900 font-medium pt-1">{address.phone}</p>
       </div>
-      <div className="flex gap-3 pt-4 border-t-2 border-gray-100">
+      <div className="flex gap-2 pt-4 border-t border-gray-100">
         {!address.isDefault && (
           <button
             onClick={() => onSetDefault(address.userAddressId)}
-            className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-green-200 text-green-700 font-semibold rounded-xl hover:border-green-900 hover:bg-green-50 transition-all duration-300 cursor-pointer whitespace-nowrap"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors"
           >
-            <FaCheckCircle />
+            <FaCheckCircle className="text-xs" />
             Set Default
           </button>
         )}
         <button
           onClick={() => onDelete(address.userAddressId)}
-          className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-red-200 text-red-700 font-semibold rounded-xl hover:border-red-900 hover:bg-red-50 transition-all duration-300 cursor-pointer whitespace-nowrap"
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm border border-red-200 text-red-600 font-medium rounded hover:bg-red-50 transition-colors"
         >
-          <FaTrash />
+          <FaTrash className="text-xs" />
           Delete
         </button>
       </div>
@@ -429,14 +347,14 @@ const Account = () => {
   );
 
   const OrdersSection = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl text-gray-900 font-poppins font-bold">My Orders</h2>
-          <p className="text-gray-500 mt-1">Track and manage your orders</p>
+          <h2 className="text-2xl text-gray-900 font-semibold">My Orders</h2>
+          <p className="text-gray-500 text-sm mt-1">Track and manage your orders</p>
         </div>
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-5 py-2.5 rounded-full text-sm font-semibold">
-          {orders.length} Total Orders
+        <div className="bg-gray-900 text-white px-4 py-1.5 rounded-full text-sm font-medium">
+          {orders.length} Orders
         </div>
       </div>
 
@@ -447,60 +365,75 @@ const Account = () => {
         return (
           <div
             key={order.id}
-            className="bg-white border-2 border-gray-100 rounded-2xl p-6 lg:p-8 hover:shadow-xl hover:border-gray-200 transition-all duration-300 group"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors"
           >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <div className="bg-gradient-to-br from-gray-100 to-gray-50 p-4 rounded-xl">
-                  <FaShoppingBag className="text-2xl text-gray-700" />
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="bg-gray-50 p-3 rounded">
+                  <FaShoppingBag className="text-lg text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-poppins font-bold text-gray-900 flex items-center gap-2">
+                  <h3 className="text-base font-semibold text-gray-900">
                     Order {order.id}
-                    <FaChevronRight className="text-sm text-gray-400 group-hover:text-gray-700 transition-colors" />
                   </h3>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-0.5">
                     <FaCalendar className="text-xs text-gray-400" />
-                    <p className="text-sm text-gray-500 font-medium">{order.date}</p>
+                    <p className="text-sm text-gray-500">{order.date}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <span
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}
                 >
                   <StatusIcon className={statusConfig.iconColor} />
                   {statusConfig.text}
                 </span>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 font-medium mb-1">Total Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">${order.total.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mb-0.5">Total</p>
+                  <p className="text-lg font-semibold text-gray-900">${order.total.toLocaleString()}</p>
                 </div>
               </div>
             </div>
 
             {/* Order Items */}
-            <div className="space-y-3 mb-6 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl border border-gray-100">
+            <div className="space-y-3 mb-5 bg-gray-50 p-4 rounded">
               {order.items.map((item, index) => (
                 <OrderItemCard key={index} item={item} />
               ))}
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedOrder(order)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors"
               >
-                <FaEye />
+                <FaEye className="text-xs" />
                 View Details
               </button>
 
-              {order.status === 'delivered' && order.reviewed === false && <ActionButton icon={FaStar} label="Write Review" colorClasses="gray" />}
+              {order.status === 'delivered' && order.reviewed === false && (
+                <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors">
+                  <FaStar className="text-xs" />
+                  Write Review
+                </button>
+              )}
 
-              {order.status === 'processing' && <ActionButton icon={FaTimesCircle} label="Cancel Order" colorClasses="red" />}
-              {(order.status === 'cancelled' || order.status === 'delivered') && <ActionButton icon={FaRedo} label="Buy Back" colorClasses="green" />}
+              {order.status === 'processing' && (
+                <button className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 text-sm font-medium rounded hover:bg-red-50 transition-colors">
+                  <FaTimesCircle className="text-xs" />
+                  Cancel Order
+                </button>
+              )}
+
+              {(order.status === 'cancelled' || order.status === 'delivered') && (
+                <button className="flex items-center gap-2 px-4 py-2 border border-green-200 text-green-600 text-sm font-medium rounded hover:bg-green-50 transition-colors">
+                  <FaRedo className="text-xs" />
+                  Buy Again
+                </button>
+              )}
             </div>
 
             {selectedOrder && (
@@ -526,9 +459,8 @@ const Account = () => {
                     <div>
                       <p className="text-sm text-gray-500 mb-1">Status</p>
                       <span
-                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold ${
-                          getStatusConfig(selectedOrder.status).bgColor
-                        } ${getStatusConfig(selectedOrder.status).textColor} ${getStatusConfig(selectedOrder.status).borderColor} border-2`}
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold ${getStatusConfig(selectedOrder.status).bgColor
+                          } ${getStatusConfig(selectedOrder.status).textColor} ${getStatusConfig(selectedOrder.status).borderColor} border-2`}
                       >
                         {React.createElement(getStatusConfig(selectedOrder.status).icon, {
                           className: getStatusConfig(selectedOrder.status).iconColor,
@@ -590,13 +522,13 @@ const Account = () => {
   const PersonalInfoSection = () => {
     if (loading) {
       return (
-        <div className="space-y-6">
-          <div className="h-12 bg-gray-200 rounded-xl animate-pulse"></div>
-          <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 space-y-6">
-            <div className="h-32 bg-gray-100 rounded-xl animate-pulse"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+            <div className="h-24 bg-gray-100 rounded animate-pulse"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse"></div>
+                <div key={i} className="h-20 bg-gray-100 rounded animate-pulse"></div>
               ))}
             </div>
           </div>
@@ -605,73 +537,50 @@ const Account = () => {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-3xl text-gray-900 font-poppins font-bold">Personal Information</h2>
-            <p className="text-gray-500 mt-1">Manage your personal details</p>
+            <h2 className="text-2xl text-gray-900 font-semibold">Personal Information</h2>
+            <p className="text-gray-500 text-sm mt-1">Manage your personal details</p>
           </div>
-          <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
-            <FaEdit />
+          <button className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors">
+            <FaEdit className="text-xs" />
             Edit Profile
           </button>
         </div>
 
-        <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 hover:shadow-xl hover:border-gray-200 transition-all duration-300">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
           {/* Profile Header */}
-          <div className="flex items-center gap-6 pb-8 mb-8 border-b-2 border-gray-100">
-            <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-                <FaUser className="text-white text-3xl" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Completed</span>
+          <div className="flex items-center gap-4 pb-6 mb-6 border-b border-gray-200">
+            <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center">
+              <FaUser className="text-white text-xl" />
             </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {orders.filter((o) => o.status === "delivered").length}
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg text-gray-900">{user?.name || 'User'}</h3>
+              <p className="text-sm text-gray-500">{user?.email || 'user@example.com'}</p>
             </div>
-            <div className="text-sm text-gray-500 mt-1">
-              Successfully delivered
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all cursor-pointer">
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
-                <FaChartLine className="text-xl text-purple-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">
-                Total Spent
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              $
-              {orders
-                .reduce((sum, order) => sum + order.total, 0)
-                .toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-500 mt-1">Lifetime value</div>
           </div>
 
           {/* Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InfoCard icon={FaUser} label="Full Name" textColor="text-blue-600" colorClass="bg-blue-100" value={user?.name} isLoading={loading} />
-            <InfoCard icon={FaEnvelope} label="Email" textColor="text-purple-600" colorClass="bg-purple-100" value={user?.email} isLoading={loading} />
-            <InfoCard icon={FaCalendar} label="Member Since" textColor="text-orange-600" colorClass="bg-orange-100" value={user?.joinDate} isLoading={loading} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <InfoCard icon={FaUser} label="Full Name" value={user?.name} isLoading={loading} />
+            <InfoCard icon={FaEnvelope} label="Email" value={user?.email} isLoading={loading} />
+            <InfoCard icon={FaCalendar} label="Member Since" value={user?.joinDate} isLoading={loading} />
           </div>
 
           {/* Account Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t-2 border-gray-100">
+          <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
             <div className="text-center">
-              <p className="text-3xl font-bold text-gray-900 mb-1">{orders.length}</p>
-              <p className="text-sm text-gray-500 font-medium">Total Orders</p>
+              <p className="text-2xl font-semibold text-gray-900 mb-1">{orders.length}</p>
+              <p className="text-xs text-gray-500">Total Orders</p>
             </div>
-            <div className="text-center border-x-2 border-gray-100">
-              <p className="text-3xl font-bold text-gray-900 mb-1">{user?.addresses?.length || 0}</p>
-              <p className="text-sm text-gray-500 font-medium">Saved Addresses</p>
+            <div className="text-center border-x border-gray-200">
+              <p className="text-2xl font-semibold text-gray-900 mb-1">{user?.addresses?.length || 0}</p>
+              <p className="text-xs text-gray-500">Addresses</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-green-600 mb-1">${orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}</p>
-              <p className="text-sm text-gray-500 font-medium">Total Spent</p>
+              <p className="text-2xl font-semibold text-gray-900 mb-1">${orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">Total Spent</p>
             </div>
           </div>
         </div>
@@ -680,29 +589,29 @@ const Account = () => {
   };
 
   const AddressesSection = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-3xl text-gray-900 font-poppins font-bold">Shipping Addresses</h2>
-          <p className="text-gray-500 mt-1">Manage your delivery locations</p>
+          <h2 className="text-2xl text-gray-900 font-semibold">Shipping Addresses</h2>
+          <p className="text-gray-500 text-sm mt-1">Manage your delivery locations</p>
         </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 text-white font-poppins font-semibold rounded-xl hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer">
-          <FaPlus />
-          Add New Address
+        <button className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors">
+          <FaPlus className="text-xs" />
+          Add Address
         </button>
       </div>
 
       {loadingAddresses ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-64 bg-gray-100 rounded-2xl animate-pulse"></div>
+            <div key={i} className="h-56 bg-gray-100 rounded-lg animate-pulse"></div>
           ))}
         </div>
       ) : addresses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {addresses.map((address) => (
-            <AddressCard 
-              key={address.userAddressId} 
+            <AddressCard
+              key={address.userAddressId}
               address={address}
               onSetDefault={handleSetDefaultAddress}
               onDelete={handleDeleteAddress}
@@ -710,9 +619,9 @@ const Account = () => {
           ))}
         </div>
       ) : (
-        <div className="col-span-full text-center py-12 bg-white border-2 border-gray-100 rounded-2xl">
-          <FaMapMarkerAlt className="text-6xl text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg mb-2">No addresses found</p>
+        <div className="text-center py-16 bg-white border border-gray-200 rounded-lg">
+          <FaMapMarkerAlt className="text-5xl text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-600 text-base mb-1">No addresses found</p>
           <p className="text-gray-400 text-sm">Add your first shipping address</p>
         </div>
       )}
@@ -735,19 +644,19 @@ const Account = () => {
   return (
     <>
       <HomeNavbar />
-      <div className="w-full bg-gradient-to-b from-gray-50 to-white pt-[70px] pb-20 min-h-screen">
+      <div className="w-full bg-gray-50 pt-[70px] pb-20 min-h-screen">
         {/* Error Banner */}
         {error && (
-          <div className="bg-red-50 border-b-2 border-red-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-red-50 border-b border-red-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-red-600 text-lg">⚠️</div>
-                  <p className="text-red-700 font-medium">{error}</p>
+                <div className="flex items-center gap-2">
+                  <div className="text-red-600">⚠️</div>
+                  <p className="text-red-700 text-sm font-medium">{error}</p>
                 </div>
                 <button
                   onClick={() => setError(null)}
-                  className="text-red-400 hover:text-red-600 text-xl"
+                  className="text-red-400 hover:text-red-600"
                 >
                   ✕
                 </button>
@@ -755,31 +664,31 @@ const Account = () => {
             </div>
           </div>
         )}
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Sidebar */}
             <div className="lg:col-span-3">
-              <div className="lg:sticky lg:top-32">
-                <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="lg:sticky lg:top-24">
+                <div className="bg-white border border-gray-200 rounded-lg p-5">
                   {/* User Profile Card */}
-                  <div className="flex flex-col items-center text-center mb-8 pb-8 border-b-2 border-gray-100">
-                    <div className="relative mb-4">
-                      <div className="w-20 h-20 bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl flex items-center justify-center shadow-lg">
-                        <FaUser className="text-white text-2xl" />
+                  <div className="flex flex-col items-center text-center mb-6 pb-6 border-b border-gray-200">
+                    <div className="relative mb-3">
+                      <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center">
+                        <FaUser className="text-white text-lg" />
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                     </div>
                     <div>
                       {loading ? (
                         <>
-                          <div className="h-6 bg-gray-200 rounded-md animate-pulse mb-2 w-32"></div>
-                          <div className="h-4 bg-gray-200 rounded-md animate-pulse w-40"></div>
+                          <div className="h-5 bg-gray-100 rounded animate-pulse mb-2 w-28"></div>
+                          <div className="h-4 bg-gray-100 rounded animate-pulse w-32"></div>
                         </>
                       ) : (
                         <>
-                          <h3 className="font-poppins font-bold text-xl text-gray-900 mb-1">{user?.name || 'User'}</h3>
-                          <p className="text-sm text-gray-500 font-medium">{user?.email || 'user@example.com'}</p>
+                          <h3 className="font-semibold text-base text-gray-900 mb-0.5">{user?.name || 'User'}</h3>
+                          <p className="text-xs text-gray-500">{user?.email || 'user@example.com'}</p>
                         </>
                       )}
                     </div>
@@ -789,11 +698,10 @@ const Account = () => {
                   <nav className="space-y-2">
                     <button
                       onClick={() => setActiveTab('orders')}
-                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 cursor-pointer ${
-                        activeTab === 'orders'
-                          ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
-                          : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 cursor-pointer ${activeTab === 'orders'
+                        ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
+                        : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
+                        }`}
                     >
                       <FaShoppingBag className="text-lg" />
                       <span className="flex-1">My Orders</span>
@@ -802,11 +710,10 @@ const Account = () => {
 
                     <button
                       onClick={() => setActiveTab('personal')}
-                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 cursor-pointer ${
-                        activeTab === 'personal'
-                          ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
-                          : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300 cursor-pointer ${activeTab === 'personal'
+                        ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
+                        : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
+                        }`}
                     >
                       <FaUser className="text-lg" />
                       <span className="flex-1">Personal Info</span>
@@ -815,25 +722,24 @@ const Account = () => {
 
                     <button
                       onClick={() => setActiveTab('addresses')}
-                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300  cursor-pointer ${
-                        activeTab === 'addresses'
-                          ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
-                          : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
-                      }`}
+                      className={`w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-left transition-all duration-300  cursor-pointer ${activeTab === 'addresses'
+                        ? 'bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg scale-105'
+                        : 'text-gray-700 hover:bg-gray-100 hover:scale-102'
+                        }`}
                     >
                       <FaMapMarkerAlt className="text-lg" />
                       <span className="flex-1">Addresses</span>
                       {activeTab === 'addresses' && <FaChevronRight className="text-sm" />}
                     </button>
 
-                    <div className="pt-4 mt-4 border-t-2 border-gray-100 space-y-2">
-                      <button className="w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-gray-700 hover:bg-gray-100 transition-all duration-300 cursor-pointer">
-                        <FaCog className="text-lg" />
+                    <div className="pt-3 mt-3 border-t border-gray-200 space-y-1">
+                      <button className="w-full flex items-center gap-3 px-4 py-3 rounded text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                        <FaCog className="text-base" />
                         <span className="flex-1">Settings</span>
                       </button>
 
-                      <button className="w-full flex items-center gap-3 px-5 py-4 rounded-xl font-poppins font-semibold text-red-600 hover:bg-red-50 transition-all duration-300 group cursor-pointer">
-                        <FaSignOutAlt className="text-lg group-hover:translate-x-1 transition-transform" />
+                      <button className="w-full flex items-center gap-3 px-4 py-3 rounded text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                        <FaSignOutAlt className="text-base" />
                         <span className="flex-1">Sign Out</span>
                       </button>
                     </div>

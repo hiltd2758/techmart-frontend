@@ -18,7 +18,7 @@ const ProductDetail = () => {
   useEffect(() => {
     // Scroll to top khi chuyển product
     window.scrollTo(0, 0);
-    
+
     const fetchProductDetail = async () => {
       try {
         setLoading(true);
@@ -45,7 +45,7 @@ const ProductDetail = () => {
           star: productData.averageRating || 5,
           stock: productData.stockQuantity || 0,
           category: productData.categories?.[0]?.name || "General",
-          sku: productData.sku,
+          sku: productData.sku || null,
           slug: productData.slug,
           brandName: productData.brand?.name,
           weight: productData.weight,
@@ -264,11 +264,10 @@ const ProductDetail = () => {
                       <button
                         key={option.value}
                         onClick={() => setSelectedOption(option.value)}
-                        className={`px-4 py-2 border rounded-lg font-poppins text-sm capitalize transition-colors ${
-                          selectedOption === option.value
+                        className={`px-4 py-2 border rounded-lg font-poppins text-sm capitalize transition-colors ${selectedOption === option.value
                             ? "border-black bg-black text-white"
                             : "border-gray-300 text-[#484848] hover:border-gray-400"
-                        }`}
+                          }`}
                       >
                         {option.name}
                       </button>

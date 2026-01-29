@@ -4,7 +4,7 @@ import HomeNavbar from "../../Components/HomeNavbar/HomeNavbar.jsx";
 import { productAPI } from "../../api/productAPI.js";
 
 const Product = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -15,16 +15,6 @@ const Product = () => {
     pageSize: 12,
   });
 
-  // Categories - cập nhật với IDs thực từ backend nếu cần
-  const categories = [
-    { id: "all", name: "All Products" },
-    { id: "1", name: "Laptops" },
-    { id: "2", name: "Smartphones" },
-    { id: "3", name: "Audio" },
-    { id: "4", name: "Wearables" },
-    { id: "5", name: "Accessories" },
-  ];
-
   // Fetch products từ API
   const fetchProducts = async (page = 0) => {
     try {
@@ -34,43 +24,68 @@ const Product = () => {
       const params = {
         page,
         size: pagination.pageSize,
-        sortBy: 'name',
-        sortDirection: 'ASC',
       };
 
-      // Thêm filter category nếu không phải "all"
-      if (selectedCategory !== "all") {
-        params.categoryIds = selectedCategory;
+      // Nếu có search query, dùng search API
+      if (searchQuery.trim()) {
+        params.q = searchQuery.trim();
+        const response = await productAPI.publicSearchProducts(params);
+        const apiData = response.data;
+        const pageData = apiData.data;
+
+        // Map dữ liệu từ ProductSummaryDTO sang format của ProductCard
+        const mappedProducts = pageData.content.map(product => ({
+          _id: product.id,
+          name: product.name,
+          description: product.name,
+          discountPrice: product.specialPrice || product.price,
+          originalPrice: product.oldPrice || product.price,
+          images: product.thumbnailUrl || '/placeholder.jpg',
+          star: product.averageRating || 5,
+          stock: product.stockQuantity,
+          category: product.brandName || 'General',
+          slug: product.slug,
+          sku: product.sku || null,
+        }));
+
+        setProducts(mappedProducts);
+        setPagination({
+          currentPage: pageData.pageNumber,
+          totalPages: pageData.totalPages,
+          totalElements: pageData.totalElements,
+          pageSize: pageData.pageSize,
+        });
+      } else {
+        // Không có search query, dùng regular listing API
+        params.sortBy = 'name';
+        params.sortDirection = 'ASC';
+        const response = await productAPI.getProducts(params);
+        const apiData = response.data;
+        const pageData = apiData.data;
+
+        // Map dữ liệu từ ProductSummaryDTO sang format của ProductCard
+        const mappedProducts = pageData.content.map(product => ({
+          _id: product.id,
+          name: product.name,
+          description: product.name,
+          discountPrice: product.specialPrice || product.price,
+          originalPrice: product.oldPrice || product.price,
+          images: product.thumbnailUrl || '/placeholder.jpg',
+          star: product.averageRating || 5,
+          stock: product.stockQuantity,
+          category: product.brandName || 'General',
+          slug: product.slug,
+          sku: product.sku || null,
+        }));
+
+        setProducts(mappedProducts);
+        setPagination({
+          currentPage: pageData.pageNumber,
+          totalPages: pageData.totalPages,
+          totalElements: pageData.totalElements,
+          pageSize: pageData.pageSize,
+        });
       }
-
-      const response = await productAPI.getProducts(params);
-
-      // Response structure: { status, message, timestamp, data }
-      const apiData = response.data;
-      const pageData = apiData.data;
-
-      // Map dữ liệu từ ProductSummaryDTO sang format của ProductCard
-      const mappedProducts = pageData.content.map(product => ({
-        _id: product.id,
-        name: product.name,
-        description: product.name, // Fallback nếu không có description
-        discountPrice: product.specialPrice || product.price,
-        originalPrice: product.oldPrice || product.price,
-        images: product.thumbnailUrl || '/placeholder.jpg',
-        star: product.averageRating || 5,
-        stock: product.stockQuantity,
-        category: product.brandName || 'General',
-        slug: product.slug,
-        sku: product.sku,
-      }));
-
-      setProducts(mappedProducts);
-      setPagination({
-        currentPage: pageData.pageNumber,
-        totalPages: pageData.totalPages,
-        totalElements: pageData.totalElements,
-        pageSize: pageData.pageSize,
-      });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load products");
       console.error("Error fetching products:", err);
@@ -79,10 +94,10 @@ const Product = () => {
     }
   };
 
-  // Load products khi component mount hoặc category thay đổi
+  // Load products khi component mount hoặc search query thay đổi
   useEffect(() => {
     fetchProducts(0);
-  }, [selectedCategory]);
+  }, [searchQuery]);
 
 
   return (
@@ -105,21 +120,25 @@ const Product = () => {
             )}
           </div>
 
-          {/* Categories */}
-          <div className="flex items-center justify-center gap-6 mb-12 flex-wrap">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`text-base font-poppins font-normal capitalize cursor-pointer px-6 py-2.5 rounded-md transition-colors ${selectedCategory === category.id
-                  ? "bg-black text-white"
-                  : "text-[#8a8a8a] hover:text-black"
-                  }`}
-                disabled={loading}
-              >
-                {category.name}
-              </button>
-            ))}
+          {/* Search Input */}
+          <div className="mb-12 flex justify-center">
+            <div className="w-full max-w-md">
+              <input
+                type="text"
+                placeholder="Search products by name, SKU, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Error Message */}
@@ -212,8 +231,18 @@ const Product = () => {
           {!loading && products.length === 0 && (
             <div className="text-center py-20">
               <p className="text-xl text-[#8a8a8a] font-poppins">
-                No products found in this category.
+                {searchQuery
+                  ? `No products found matching "${searchQuery}"`
+                  : "No products found."}
               </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  Clear Search
+                </button>
+              )}
             </div>
           )}
         </div>

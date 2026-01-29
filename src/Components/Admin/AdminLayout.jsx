@@ -21,6 +21,7 @@ const AdminLayout = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef(null);
   const location = useLocation();
+  
   useEffect(() => {
     document.title = 'TechMart Admin Dashboard';
   }, []);
@@ -36,17 +37,14 @@ const AdminLayout = () => {
     try {
       await authAPI.logout();
 
-      // Clear all auth data
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
 
-      // Redirect to login
       navigate('/login');
     } catch (error) {
       console.error('Logout API failed:', error);
 
-      // Even if API fails, clear local data and redirect
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
@@ -55,6 +53,7 @@ const AdminLayout = () => {
       setIsLoggingOut(false);
     }
   };
+
   const menuItems = [
     { path: "/admin", icon: FaTachometerAlt, label: "Dashboard", exact: true },
     { path: "/admin/products", icon: FaBox, label: "Products" },
@@ -69,7 +68,6 @@ const AdminLayout = () => {
     return location.pathname.startsWith(path);
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -81,30 +79,30 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="flex h-screen bg-neutral-50 overflow-hidden">
       {/* Sidebar */}
       <aside
         className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200
+        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-neutral-200
         transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-semibold text-lg">T</span>
+        <div className="flex items-center justify-between h-16 px-6 border-b border-neutral-200">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-neutral-900 flex items-center justify-center">
+              <span className="text-white font-mono text-sm font-bold">T</span>
             </div>
-            <span className="text-lg font-semibold text-gray-900 tracking-tight">
+            <span className="text-sm font-mono uppercase tracking-widest text-neutral-900">
               TechMart
             </span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-gray-600 transition-colors"
+            className="lg:hidden text-neutral-400 hover:text-neutral-900 transition-colors"
           >
-            <FaTimes size={20} />
+            <FaTimes size={16} />
           </button>
         </div>
 
@@ -115,19 +113,20 @@ const AdminLayout = () => {
               key={item.path}
               to={item.path}
               className={`
-                flex items-center px-4 py-3 text-sm font-medium rounded-lg
-                transition-all duration-200
+                flex items-center px-4 py-3 text-xs font-mono uppercase tracking-wider
+                transition-all duration-200 border-l-2
                 ${isActive(item.path, item.exact)
-                  ? "bg-teal-50 text-teal-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-neutral-100 text-neutral-900 border-neutral-900"
+                  : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 border-transparent"
                 }
               `}
             >
               <item.icon
-                className={`mr-3 text-base ${isActive(item.path, item.exact)
-                    ? "text-teal-600"
-                    : "text-gray-400"
+                className={`mr-3 ${isActive(item.path, item.exact)
+                    ? "text-neutral-900"
+                    : "text-neutral-400"
                   }`}
+                size={14}
               />
               {item.label}
             </Link>
@@ -135,13 +134,13 @@ const AdminLayout = () => {
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-neutral-200">
           <button 
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center w-full px-4 py-3 text-xs font-mono uppercase tracking-wider text-red-600 hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed border-l-2 border-transparent hover:border-red-600"
           >
-            <FaSignOutAlt className="mr-3 text-base" />
+            <FaSignOutAlt className="mr-3" size={14} />
             {isLoggingOut ? 'Logging out...' : 'Logout'}
           </button>
         </div>
@@ -150,20 +149,20 @@ const AdminLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <header className="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-6">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden text-gray-400 hover:text-gray-600 transition-colors"
+            className="lg:hidden text-neutral-400 hover:text-neutral-900 transition-colors"
           >
-            <FaBars size={20} />
+            <FaBars size={18} />
           </button>
 
           <div className="flex items-center gap-4 flex-1 justify-center lg:justify-start">
-            <div className="hidden md:flex items-center px-4 py-2.5 bg-gray-50 rounded-lg border border-gray-200 w-96">
+            <div className="hidden md:flex items-center px-4 py-2.5 bg-neutral-50 border border-neutral-200 w-96">
               <input
                 type="text"
-                placeholder="Search..."
-                className="bg-transparent border-none outline-none text-sm w-full placeholder-gray-400"
+                placeholder="Search products, orders..."
+                className="bg-transparent border-none outline-none text-sm font-mono w-full placeholder-neutral-400 text-neutral-900"
               />
             </div>
           </div>
@@ -172,50 +171,50 @@ const AdminLayout = () => {
           <div className="relative ml-auto" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+              className="flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 transition-colors duration-200 border border-transparent hover:border-neutral-200"
             >
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900">Admin User</p>
-                <p className="text-xs text-gray-500">admin@techmart.com</p>
+                <p className="text-xs font-mono text-neutral-900">Admin User</p>
+                <p className="text-xs font-mono text-neutral-400">admin@techmart.com</p>
               </div>
 
-              <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-sm">
+              <div className="w-9 h-9 bg-neutral-900 flex items-center justify-center text-white font-mono text-xs">
                 A
               </div>
 
               <FaChevronDown
-                className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""
+                className={`w-3 h-3 text-neutral-400 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""
                   }`}
               />
             </button>
 
             {/* Dropdown Menu */}
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                <div className="sm:hidden px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-500 mt-0.5">admin@techmart.com</p>
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-neutral-200 py-1 z-50 shadow-sm">
+                <div className="sm:hidden px-4 py-3 border-b border-neutral-100">
+                  <p className="text-xs font-mono text-neutral-900">Admin User</p>
+                  <p className="text-xs font-mono text-neutral-400 mt-1">admin@techmart.com</p>
                 </div>
 
                 {/* Menu Items */}
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
-                  <FaUser className="w-4 h-4 text-gray-400" />
-                  <span>My Profile</span>
+                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors duration-150">
+                  <FaUser className="w-3.5 h-3.5" />
+                  <span>Profile</span>
                 </button>
 
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150">
-                  <FaCog className="w-4 h-4 text-gray-400" />
+                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition-colors duration-150">
+                  <FaCog className="w-3.5 h-3.5" />
                   <span>Settings</span>
                 </button>
 
-                <div className="border-t border-gray-100 my-2"></div>
+                <div className="border-t border-neutral-100 my-1"></div>
 
                 <button 
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-red-600 hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <FaSignOutAlt className="w-4 h-4" />
+                  <FaSignOutAlt className="w-3.5 h-3.5" />
                   <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
               </div>
@@ -224,7 +223,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-8 bg-gray-50">
+        <main className="flex-1 overflow-y-auto bg-neutral-50">
           <Outlet />
         </main>
       </div>
@@ -232,7 +231,7 @@ const AdminLayout = () => {
       {/* Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-30 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

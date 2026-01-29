@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   FaBox,
   FaShoppingCart,
@@ -8,393 +9,292 @@ import {
   FaDownload,
   FaChevronRight,
 } from "react-icons/fa";
+import { productAPI } from "../../api/productAPI";
+import { customerAPI } from "../../api/customerAPI";
 
 const Dashboard = () => {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Total Products",
-      value: "1,234",
-      change: "+12%",
+      value: "0",
+      change: "+0%",
       changeType: "increase",
       icon: FaBox,
     },
     {
       title: "Total Orders",
-      value: "567",
-      change: "+8%",
+      value: "0",
+      change: "+0%",
       changeType: "increase",
       icon: FaShoppingCart,
     },
     {
       title: "Total Users",
-      value: "890",
-      change: "+23%",
+      value: "0",
+      change: "+0%",
       changeType: "increase",
       icon: FaUsers,
     },
-    {
-      title: "Revenue",
-      value: "$45,678",
-      change: "-3%",
-      changeType: "decrease",
-      icon: FaDollarSign,
-    },
-  ];
+  ]);
 
-  const recentOrders = [
-    {
-      id: "#12345",
-      customer: "John Doe",
-      amount: "$299.99",
-      status: "Completed",
-      statusColor: "green",
-    },
-    {
-      id: "#12346",
-      customer: "Jane Smith",
-      amount: "$599.50",
-      status: "Processing",
-      statusColor: "yellow",
-    },
-    {
-      id: "#12347",
-      customer: "Mike Johnson",
-      amount: "$399.99",
-      status: "Pending",
-      statusColor: "blue",
-    },
-    {
-      id: "#12348",
-      customer: "Sarah Wilson",
-      amount: "$799.00",
-      status: "Completed",
-      statusColor: "green",
-    },
-  ];
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const topProducts = [
-    {
-      name: "MacBook Pro M3",
-      sold: 45,
-      price: "$2,499",
-      image: "/arrivals/arrival_1.jpg",
-    },
-    {
-      name: "iPhone 15 Pro",
-      sold: 38,
-      price: "$999",
-      image: "/arrivals/arrival_3.png",
-    },
-    {
-      name: "AirPods Pro",
-      sold: 32,
-      price: "$249",
-      image: "/arrivals/arrival_4.jpg",
-    },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
 
-  const recentActivities = [
-    {
-      type: "order",
-      message: "New order #12349 received",
-      time: "2 minutes ago",
-      icon: FaShoppingCart,
-    },
-    {
-      type: "product",
-      message: "New product added to inventory",
-      time: "15 minutes ago",
-      icon: FaBox,
-    },
-    {
-      type: "user",
-      message: "New user registered",
-      time: "1 hour ago",
-      icon: FaUsers,
-    },
-    {
-      type: "order",
-      message: "Order #12348 shipped",
-      time: "3 hours ago",
-      icon: FaShoppingCart,
-    },
-  ];
+        const warehouseRes = await productAPI.getWarehouseProducts({
+          page: 0,
+          size: 1000,
+        });
+        
+        console.log("=== WAREHOUSE API RESPONSE ===");
+        console.log("Full Response:", warehouseRes);
+        console.log("warehouseRes.data:", warehouseRes.data);
+        console.log("warehouseRes.data.data:", warehouseRes.data?.data);
+        
+        console.log("Response keys:", Object.keys(warehouseRes.data?.data || {}));
+        console.log("totalElements:", warehouseRes.data?.data?.totalElements);
+        console.log("content:", warehouseRes.data?.data?.content);
+        console.log("totalPages:", warehouseRes.data?.data?.totalPages);
+        console.log("pageNumber:", warehouseRes.data?.data?.pageNumber);
+        console.log("pageSize:", warehouseRes.data?.data?.pageSize);
+        
+        const warehouseData = warehouseRes.data?.data;
+        let totalProductsCount = warehouseData?.totalElements || 0;
+        let warehouseProducts = warehouseData?.content || [];
+        
+        console.log("totalProductsCount:", totalProductsCount);
+        console.log("warehouseProducts.length:", warehouseProducts.length);
+        console.log("warehouseProducts:", warehouseProducts);
+        
+        if (totalProductsCount === 0 && warehouseProducts.length === 0) {
+          console.log("⚠️ Warehouse endpoint trả về 0, đang fallback sang adminGetProducts...");
+          const fallbackRes = await productAPI.adminGetProducts({
+            page: 0,
+            size: 1000,
+          });
+          
+          console.log("=== FALLBACK ADMIN PRODUCTS RESPONSE ===");
+          console.log("Response keys:", Object.keys(fallbackRes.data?.data || {}));
+          console.log("totalElements:", fallbackRes.data?.data?.totalElements);
+          console.log("content length:", fallbackRes.data?.data?.content?.length);
+          
+          totalProductsCount = fallbackRes.data?.data?.totalElements || 0;
+          warehouseProducts = fallbackRes.data?.data?.content || [];
+          
+          console.log("Fallback totalProductsCount:", totalProductsCount);
+          console.log("Fallback warehouseProducts.length:", warehouseProducts.length);
+        }
+
+        const customersRes = await customerAPI.getCustomers(0, 10);
+        
+        console.log("=== CUSTOMERS API RESPONSE ===");
+        console.log("Full Response:", customersRes);
+        console.log("customersRes.data.data:", customersRes.data?.data);
+        
+        const customersData = customersRes.data?.data;
+        const totalCustomersCount = customersData?.totalElements || 0;
+        const allCustomers = customersData?.content || [];
+        
+        console.log("totalCustomersCount:", totalCustomersCount);
+        console.log("allCustomers.length:", allCustomers.length);
+
+        const totalRevenue = warehouseProducts.reduce(
+          (sum, product) => sum + (product.price || 0),
+          0
+        );
+        
+        console.log("totalRevenue:", totalRevenue);
+        console.log("=== CALCULATED STATS ===");
+        console.log("Total Orders (quantity > 0):", warehouseProducts.filter((p) => p.quantity > 0).length);
+
+        setStats([
+          {
+            title: "Total Products",
+            value: totalProductsCount.toLocaleString(),
+            change: "+12%",
+            changeType: "increase",
+            icon: FaBox,
+          },
+          {
+            title: "Total Orders",
+            value: warehouseProducts
+              .filter((p) => p.quantity > 0)
+              .length.toString(),
+            change: "+8%",
+            changeType: "increase",
+            icon: FaShoppingCart,
+          },
+          {
+            title: "Total Users",
+            value: totalCustomersCount.toLocaleString(),
+            change: "+23%",
+            changeType: "increase",
+            icon: FaUsers,
+          },
+        ]);
+
+        const ordersData = warehouseProducts.slice(0, 4).map((product, index) => ({
+          id: `#${10000 + index}`,
+          customer: product.sellerName || product.name || "Store",
+          amount: `$${product.price || 0}`,
+          status: product.quantity > 0 ? "In Stock" : "Out of Stock",
+          statusColor: product.quantity > 0 ? "green" : "red",
+        }));
+        setRecentOrders(ordersData);
+
+        const topProductsData = warehouseProducts
+          .filter((p) => p.thumbnail)
+          .sort((a, b) => (b.quantity || 0) - (a.quantity || 0))
+          .slice(0, 3)
+          .map((product) => ({
+            name: product.name,
+            sold: product.quantity || 0,
+            price: `$${product.price || 0}`,
+            image: product.thumbnail || "/arrivals/arrival_1.jpg",
+          }));
+        setTopProducts(topProductsData);
+
+        setLoading(false);
+      } catch (error) {
+        console.error("❌ Lỗi khi fetch dữ liệu Dashboard:", error);
+        console.error("Error message:", error.message);
+        console.error("Error response:", error.response);
+        console.error("Error config:", error.config);
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-neutral-500 mt-4 text-sm font-mono">Loading data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-medium text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Monitor your store performance and key metrics
-          </p>
+    <div className="min-h-screen bg-neutral-50 p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-end justify-between pb-6 border-b border-neutral-200">
+          <div>
+            <h1 className="text-3xl font-light tracking-tight text-neutral-900">Dashboard</h1>
+            <p className="text-neutral-500 mt-1 text-sm font-mono">Real-time metrics</p>
+          </div>
+          <button className="h-9 px-4 bg-neutral-900 text-white text-xs font-mono uppercase tracking-wider hover:bg-neutral-800 transition-colors flex items-center gap-2">
+            <FaDownload size={12} />
+            Export
+          </button>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
-          <FaDownload size={14} />
-          Download Report
-        </button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-6">
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                <stat.icon className="text-lg text-gray-700" />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {stats.map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white border border-neutral-200 p-6 group hover:border-neutral-900 transition-colors"
+            >
+              <div className="flex items-start justify-between mb-8">
+                <div className="w-10 h-10 bg-neutral-100 flex items-center justify-center group-hover:bg-neutral-900 transition-colors">
+                  <stat.icon className="text-neutral-600 group-hover:text-white transition-colors" size={16} />
+                </div>
+                <div className={`flex items-center gap-1 text-xs font-mono ${
+                  stat.changeType === "increase" ? "text-green-600" : "text-red-600"
+                }`}>
+                  {stat.changeType === "increase" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
+                  {stat.change}
+                </div>
               </div>
-              <div
-                className={`flex items-center gap-1 text-xs font-medium ${
-                  stat.changeType === "increase"
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {stat.changeType === "increase" ? (
-                  <FaArrowUp size={10} />
-                ) : (
-                  <FaArrowDown size={10} />
-                )}
-                {stat.change}
+              <div className="space-y-1">
+                <p className="text-xs font-mono uppercase tracking-wider text-neutral-400">{stat.title}</p>
+                <p className="text-3xl font-light text-neutral-900">{stat.value}</p>
               </div>
             </div>
-            <p className="text-gray-500 text-xs font-medium mb-2">{stat.title}</p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {stat.value}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Orders - 2 columns */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">
-              Recent Orders
-            </h2>
-            <a
-              href="/admin/orders"
-              className="text-gray-600 hover:text-gray-900 text-xs font-medium flex items-center gap-1 transition-colors"
-            >
-              View All
-              <FaChevronRight size={10} />
-            </a>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Order ID
-                  </th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Customer
-                  </th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Amount
-                  </th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {recentOrders.map((order, index) => (
-                  <tr
-                    key={index}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-4 px-6">
-                      <span className="font-mono text-sm text-gray-900">
-                        {order.id}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-gray-700 text-sm">
-                      {order.customer}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="font-semibold text-sm text-gray-900">
-                        {order.amount}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span
-                        className={`
-                        inline-flex px-2.5 py-1 text-xs font-medium rounded
-                        ${
-                          order.statusColor === "green"
-                            ? "bg-green-50 text-green-700"
-                            : ""
-                        }
-                        ${
-                          order.statusColor === "yellow"
-                            ? "bg-yellow-50 text-yellow-700"
-                            : ""
-                        }
-                        ${
-                          order.statusColor === "blue"
-                            ? "bg-blue-50 text-blue-700"
-                            : ""
-                        }
-                      `}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          ))}
         </div>
 
-        {/* Top Products - 1 column */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">
-              Top Products
-            </h2>
-            <a
-              href="/admin/products"
-              className="text-gray-600 hover:text-gray-900 text-xs font-medium flex items-center gap-1 transition-colors"
-            >
-              View All
-              <FaChevronRight size={10} />
-            </a>
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Recent Orders */}
+          <div className="lg:col-span-2 bg-white border border-neutral-200">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+              <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-900">Recent Orders</h2>
+              <a href="/admin/orders" className="text-xs font-mono text-neutral-500 hover:text-neutral-900 flex items-center gap-1 uppercase tracking-wider">
+                View All
+                <FaChevronRight size={8} />
+              </a>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-neutral-200">
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Order</th>
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Customer</th>
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Amount</th>
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order, index) => (
+                    <tr key={index} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
+                      <td className="py-4 px-6">
+                        <span className="font-mono text-sm text-neutral-900">{order.id}</span>
+                      </td>
+                      <td className="py-4 px-6 text-sm text-neutral-600">{order.customer}</td>
+                      <td className="py-4 px-6">
+                        <span className="font-mono text-sm text-neutral-900">{order.amount}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-mono uppercase tracking-wider ${
+                          order.statusColor === "green" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className="p-4 space-y-3">
-            {topProducts.map((product, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200"
-              >
-                <div className="flex items-center gap-3 flex-1">
+
+          {/* Top Products */}
+          <div className="bg-white border border-neutral-200">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+              <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-900">Top Products</h2>
+              <a href="/admin/products" className="text-xs font-mono text-neutral-500 hover:text-neutral-900 flex items-center gap-1 uppercase tracking-wider">
+                View All
+                <FaChevronRight size={8} />
+              </a>
+            </div>
+            <div className="divide-y divide-neutral-100">
+              {topProducts.map((product, index) => (
+                <div key={index} className="p-4 flex items-center gap-4 hover:bg-neutral-50 transition-colors">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-12 h-12 rounded object-cover border border-gray-200"
+                    className="w-14 h-14 object-cover border border-neutral-200"
                   />
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm text-gray-900 truncate">{product.name}</p>
-                    <p className="text-xs text-gray-500">{product.sold} sold</p>
-                  </div>
-                </div>
-                <span className="font-semibold text-sm text-gray-900 ml-2">
-                  {product.price}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-900">
-              Recent Activity
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {recentActivities.map((activity, index) => {
-              const ActivityIcon = activity.icon;
-              return (
-                <div
-                  key={index}
-                  className="px-6 py-4 hover:bg-gray-50 transition-colors flex items-center gap-4"
-                >
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0">
-                    <ActivityIcon size={14} />
-                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-gray-900 text-sm">
-                      {activity.message}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{activity.time}</p>
+                    <p className="text-sm text-neutral-900 truncate font-light">{product.name}</p>
+                    <p className="text-xs text-neutral-500 font-mono mt-0.5">{product.sold} units</p>
                   </div>
+                  <span className="font-mono text-sm text-neutral-900 whitespace-nowrap">{product.price}</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Performance
-            </h3>
-            <div className="space-y-5">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-700">Conversion Rate</span>
-                  <span className="text-sm font-semibold text-gray-900">
-                    3.24%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div
-                    className="bg-gray-900 h-1.5 rounded-full transition-all duration-500"
-                    style={{ width: "32.4%" }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-700">Growth Rate</span>
-                  <span className="text-sm font-semibold text-gray-900">
-                    8.52%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div
-                    className="bg-green-600 h-1.5 rounded-full transition-all duration-500"
-                    style={{ width: "85.2%" }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-700">Avg Order Value</span>
-                  <span className="text-sm font-semibold text-gray-900">
-                    $485
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div
-                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
-                    style={{ width: "75%" }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-gray-200">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              Summary
-            </h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Today's Sales</span>
-                <span className="font-semibold text-gray-900">$2,849</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Pending Orders</span>
-                <span className="font-semibold text-gray-900">12</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Low Stock Items</span>
-                <span className="font-semibold text-orange-600">5</span>
-              </div>
+              ))}
             </div>
           </div>
         </div>

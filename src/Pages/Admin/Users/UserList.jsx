@@ -55,132 +55,120 @@ const UserList = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-medium text-gray-900">Users</h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Manage user accounts and permissions
-          </p>
+    <div className="min-h-screen bg-neutral-50 p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-end justify-between pb-6 border-b border-neutral-200">
+          <div>
+            <h1 className="text-3xl font-light tracking-tight text-neutral-900">Users</h1>
+            <p className="text-neutral-500 mt-1 text-sm font-mono">Manage accounts & permissions</p>
+          </div>
+          <Link
+            to="/admin/users/add"
+            className="h-9 px-4 bg-neutral-900 text-white text-xs font-mono uppercase tracking-wider hover:bg-neutral-800 transition-colors flex items-center gap-2"
+          >
+            <FaPlus size={12} />
+            Add User
+          </Link>
         </div>
-        <Link
-          to="/admin/users/add"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-        >
-          <FaPlus size={14} />
-          Add User
-        </Link>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-5">
-        <div className="flex">
-          <div className="relative w-full">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+        {/* Search */}
+        <div className="bg-white border border-neutral-200 p-4">
+          <div className="relative">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={13} />
             <input
               type="text"
-              placeholder="Search users by name or email..."
+              placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900"
             />
           </div>
         </div>
-      </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-sm text-gray-500">Loading users...</div>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-sm text-gray-500">No users found</div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Name
-                  </th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Email
-                  </th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-600">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-900 flex items-center justify-center text-white font-medium text-sm">
-                          {user.name?.charAt(0) || 'U'}
-                        </div>
-                        <span className="font-medium text-sm text-gray-900">
-                          {user.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-sm text-gray-700">{user.email}</td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-1">
-                        <Link
-                          to={`/admin/users/edit/${user.id}`}
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Edit user"
-                        >
-                          <FaEdit size={15} />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(user.id, user.name)}
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Delete user"
-                        >
-                          <FaTrash size={15} />
-                        </button>
-                      </div>
-                    </td>
+        {/* Users Table */}
+        <div className="bg-white border border-neutral-200 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="py-12 px-6 text-center text-sm text-neutral-500">
+              No users found
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200">
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Name</th>
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Email</th>
+                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-neutral-900 flex items-center justify-center text-white font-light text-xs">
+                            {user.name?.charAt(0) || 'U'}
+                          </div>
+                          <span className="text-sm font-light text-neutral-900">{user.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 text-sm text-neutral-600 font-mono">{user.email}</td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/admin/users/edit/${user.id}`}
+                            className="p-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
+                            title="Edit"
+                          >
+                            <FaEdit size={14} />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(user.id, user.name)}
+                            className="p-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
+                            title="Delete"
+                          >
+                            <FaTrash size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          Showing {pagination.page * pagination.size + 1} to {Math.min((pagination.page + 1) * pagination.size, pagination.totalElements)} of {pagination.totalElements} users
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => fetchCustomers(pagination.page - 1)}
-            className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={pagination.page === 0 || loading}
-          >
-            Previous
-          </button>
-          <span className="px-3 py-1.5 flex items-center text-sm text-gray-600">
-            Page {pagination.page + 1} of {Math.max(pagination.totalPages, 1)}
-          </span>
-          <button
-            onClick={() => fetchCustomers(pagination.page + 1)}
-            className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={pagination.page >= pagination.totalPages - 1 || loading}
-          >
-            Next
-          </button>
+        {/* Pagination */}
+        <div className="flex items-center justify-between text-xs">
+          <p className="text-neutral-600 font-mono">
+            Showing {pagination.page * pagination.size + 1} to {Math.min((pagination.page + 1) * pagination.size, pagination.totalElements)} of {pagination.totalElements}
+          </p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => fetchCustomers(pagination.page - 1)}
+              disabled={pagination.page === 0 || loading}
+              className="px-3 py-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-mono uppercase tracking-wider"
+            >
+              Prev
+            </button>
+            <span className="px-3 py-1.5 font-mono text-neutral-600">
+              {pagination.page + 1} / {Math.max(pagination.totalPages, 1)}
+            </span>
+            <button
+              onClick={() => fetchCustomers(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages - 1 || loading}
+              className="px-3 py-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-mono uppercase tracking-wider"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

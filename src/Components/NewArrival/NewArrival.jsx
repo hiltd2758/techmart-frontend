@@ -1,7 +1,13 @@
+import { useState, useEffect } from "react";
 import { FaStar } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { productAPI } from "../../api/productAPI";
 
 const NewArrival = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const newArrivalsCategories = [
     {
       id: 1,
@@ -30,62 +36,23 @@ const NewArrival = () => {
     },
   ];
 
-  const products = [
-    {
-      _id: "1",
-      name: 'MacBook Pro 16" M3 Max',
-      description: "Apple M3 Max chip, 36GB RAM, 1TB SSD",
-      discountPrice: 5000,
-      images: "/arrivals/arrival_1.jpg",
-      star: 5,
-      stock: 15,
-    },
-    {
-      _id: "2",
-      name: "iPhone 15 Pro Max 256GB",
-      description: "Titanium Blue, A17 Pro chip, 48MP camera",
-      discountPrice: 300,
-      images: "/arrivals/arrival_3.png",
-      star: 5,
-      stock: 25,
-    },
-    {
-      _id: "3",
-      name: "Samsung Galaxy S24 Ultra",
-      description: "512GB, AI camera, S Pen included",
-      discountPrice: 200,
-      images: "/arrivals/arrival_2.jpg",
-      star: 4,
-      stock: 30,
-    },
-    {
-      _id: "4",
-      name: "AirPods Pro Gen 2",
-      description: "Active Noise Cancellation, USB-C charging",
-      discountPrice: 100,
-      images: "/arrivals/arrival_4.jpg",
-      star: 5,
-      stock: 50,
-    },
-    {
-      _id: "5",
-      name: "Dell XPS 15",
-      description: "Intel i9, RTX 4060, 32GB RAM, 1TB SSD",
-      discountPrice: 300,
-      images: "/arrivals/arrival_5.jpg",
-      star: 4,
-      stock: 12,
-    },
-    {
-      _id: "6",
-      name: "Apple Watch Series 9",
-      description: "GPS + Cellular, 45mm, Midnight Aluminum",
-      discountPrice: 100,
-      images: "/arrivals/arrival_6.jpg",
-      star: 5,
-      stock: 35,
-    },
-  ];
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await productAPI.getFeaturedProducts(6);
+        setProducts(response.data.data || []);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Failed to load products. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <div className="w-full bg-white pt-[150px] pb-[150px]">
@@ -105,11 +72,10 @@ const NewArrival = () => {
         <div className="flex items-center justify-center gap-10 mb-10">
           {newArrivalsCategories.map((category) => (
             <button
-              className={`text-base font-poppins font-normal capitalize cursor-pointer ${
-                category.id === 2
+              className={`text-base font-poppins font-normal capitalize cursor-pointer ${category.id === 2
                   ? "px-6 py-2.5 bg-black rounded-sm text-white"
                   : "text-[#8a8a8a]"
-              }`}
+                }`}
               key={category.id}
             >
               {category.name}
@@ -117,69 +83,97 @@ const NewArrival = () => {
           ))}
         </div>
 
+        {/* Loading state */}
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="text-center py-20">
+            <p className="text-red-500 text-lg">{error}</p>
+          </div>
+        )}
+
         {/* products grid */}
-        {/* products grid */}
-        <div className="grid grid-cols-3 gap-8">
-          {products.map((product) => (
-            <div
-              key={product._id}
-              className="bg-white shadow-lg p-5 rounded-md cursor-pointer hover:shadow-xl transition-shadow"
-              onClick={() => (window.location.href = `/product/${product._id}`)}
-            >
-              {/* Container ảnh với padding và border */}
-              <div className="w-full h-[244px] mb-2.5 flex items-center justify-center bg-white border border-gray-200 rounded-md overflow-hidden p-4">
-                <img
-                  className="w-full h-full object-contain"
-                  src={product.images}
-                  alt={product.name}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-8">
+        {!loading && !error && (
+          <div className="grid grid-cols-3 gap-8">
+            {products.map((product) => {
+              // Get the first image from the product
+              const imageUrl = product.imageUrl || product.images?.[0] || "/placeholder.jpg";
+              const rating = product.averageRating || product.star || 0;
+              const stockQuantity = product.stockQuantity || product.stock || 0;
+              const price = product.discountPrice || product.price || 0;
+
+              return (
+                <div
+                  key={product.id || product._id}
+                  className="bg-white shadow-lg p-5 rounded-md cursor-pointer hover:shadow-xl transition-shadow"
+                  onClick={() => (window.location.href = `/product/${product.id || product._id}`)}
+                >
+                  {/* Container ảnh với padding và border */}
+                  <div className="w-full h-[244px] mb-2.5 flex items-center justify-center bg-white border border-gray-200 rounded-md overflow-hidden p-4">
+                    <img
+                      className="w-full h-full object-contain"
+                      src={imageUrl}
+                      alt={product.name}
+                      onError={(e) => {
+                        e.target.src = "/placeholder.jpg";
+                      }}
+                    />
+                  </div>
                   <div>
-                    <h4 className="text-xl text-[#484848] font-poppins font-medium capitalize mb-2">
-                      {product.name}
-                    </h4>
-                    <p className="text-base text-[#8a8a8a] font-poppins font-normal">
-                      {product.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(Math.ceil(product.star))].map((_, index) => (
-                      <span key={index}>
-                        <FaStar size={"1.5rem"} color="#fca120" />
-                      </span>
-                    ))}
+                    <div className="flex items-center justify-between gap-8">
+                      <div>
+                        <h4 className="text-xl text-[#484848] font-poppins font-medium capitalize mb-2">
+                          {product.name}
+                        </h4>
+                        <p className="text-base text-[#8a8a8a] font-poppins font-normal line-clamp-2">
+                          {product.description || product.shortDescription || ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(Math.ceil(rating))].map((_, index) => (
+                          <span key={index}>
+                            <FaStar size={"1.5rem"} color="#fca120" />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-5">
+                      <p className="text-2xl text-[#484848] font-poppins font-medium">
+                        ${price.toLocaleString()}
+                      </p>
+                      {stockQuantity > 0 ? (
+                        <span className="text-base text-[#ff4646] font-poppins capitalize font-normal">
+                          stock: {stockQuantity}
+                        </span>
+                      ) : (
+                        <span className="text-base text-[#ff4646] font-poppins capitalize font-normal">
+                          almost sold out
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-5">
-                  <p className="text-2xl text-[#484848] font-poppins font-medium">
-                    ${product.discountPrice}
-                  </p>
-                  {product.stock > 0 ? (
-                    <span className="text-base text-[#ff4646] font-poppins capitalize font-normal">
-                      stock:{product.stock}
-                    </span>
-                  ) : (
-                    <span className="text-base text-[#ff4646] font-poppins capitalize font-normal">
-                      almost sold out
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* view more button */}
-        <div className="mt-10 flex items-center justify-center">
-          <Link
-            to="/product"
-            className="text-base text-white font-poppins font-normal capitalize px-8 py-2.5 bg-black rounded-md cursor-pointer hover:bg-gray-800 transition-colors inline-block"
-          >
-            view more
-          </Link>
-        </div>
+        {!loading && !error && (
+          <div className="mt-10 flex items-center justify-center">
+            <Link
+              to="/product"
+              className="text-base text-white font-poppins font-normal capitalize px-8 py-2.5 bg-black rounded-md cursor-pointer hover:bg-gray-800 transition-colors inline-block"
+            >
+              view more
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
