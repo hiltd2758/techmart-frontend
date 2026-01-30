@@ -242,343 +242,345 @@ const handleSubmit = async (e) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/admin/products')}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <FaArrowLeft className="text-gray-600" />
-        </button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
-          <p className="text-gray-500 mt-1">Create a new product in your inventory</p>
+    <div className="min-h-screen bg-neutral-50 p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-end justify-between pb-6 border-b border-neutral-200">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <button
+                onClick={() => navigate('/admin/products')}
+                className="p-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
+              >
+                <FaArrowLeft size={16} />
+              </button>
+              <h1 className="text-3xl font-light tracking-tight text-neutral-900">Add New Product</h1>
+            </div>
+            <p className="text-neutral-500 mt-1 text-sm font-mono">Create a new product in your inventory</p>
+          </div>
         </div>
-      </div>
 
-      {/* Error Alert */}
-      {typeof errors === 'string' && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {errors}
-        </div>
-      )}
+        {/* Error Alert */}
+        {typeof errors === 'string' && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-xs">
+            {errors}
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Form */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Basic Info */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter product name"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  SKU *
-                </label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g. PROD-001 (6-20 characters, uppercase)"
-                  pattern="[A-Z0-9\-]{6,20}"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Categories - Checkboxes */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Info */}
+            <div className="bg-white border border-neutral-200 p-6">
+              <h2 className="text-sm font-mono uppercase tracking-wider text-neutral-900 mb-6">Basic Information</h2>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Categories *
+                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                    Product Name *
                   </label>
-                  <div className="border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
-                    {Array.isArray(categories) && categories.length > 0 ? (
-                      categories.map(cat => (
-                        <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                          <input
-                            type="checkbox"
-                            value={cat.id}
-                            checked={formData.categoryIds.includes(cat.id)}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value)
-                              const newCategoryIds = e.target.checked
-                                ? [...formData.categoryIds, value]
-                                : formData.categoryIds.filter(id => id !== value)
-                              setFormData({ ...formData, categoryIds: newCategoryIds })
-                            }}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{cat.name}</span>
-                        </label>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500">No categories available</p>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Select one or more categories</p>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900"
+                    placeholder="Enter product name"
+                    required
+                  />
                 </div>
 
-                {/* Brands - Radio buttons */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Brand
+                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                    SKU *
                   </label>
-                  <div className="border border-gray-200 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
-                    {Array.isArray(brands) && brands.length > 0 ? (
-                      <>
-                        <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                          <input
-                            type="radio"
-                            name="brandId"
-                            value=""
-                            checked={formData.brandId === ''}
-                            onChange={handleChange}
-                            className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-500 italic">No brand</span>
-                        </label>
-                        {brands.map(brand => (
-                          <label key={brand.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <input
+                    type="text"
+                    name="sku"
+                    value={formData.sku}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900"
+                    placeholder="e.g. PROD-001"
+                    pattern="[A-Z0-9\-]{6,20}"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Categories - Checkboxes */}
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                      Categories *
+                    </label>
+                    <div className="border border-neutral-200 p-3 max-h-40 overflow-y-auto space-y-2">
+                      {Array.isArray(categories) && categories.length > 0 ? (
+                        categories.map(cat => (
+                          <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-1 rounded text-sm">
+                            <input
+                              type="checkbox"
+                              value={cat.id}
+                              checked={formData.categoryIds.includes(cat.id)}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value)
+                                const newCategoryIds = e.target.checked
+                                  ? [...formData.categoryIds, value]
+                                  : formData.categoryIds.filter(id => id !== value)
+                                setFormData({ ...formData, categoryIds: newCategoryIds })
+                              }}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-neutral-700">{cat.name}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-neutral-500">No categories available</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Brands - Radio buttons */}
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                      Brand
+                    </label>
+                    <div className="border border-neutral-200 p-3 max-h-40 overflow-y-auto space-y-2">
+                      {Array.isArray(brands) && brands.length > 0 ? (
+                        <>
+                          <label className="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-1 rounded text-sm">
                             <input
                               type="radio"
                               name="brandId"
-                              value={brand.id}
-                              checked={formData.brandId === brand.id.toString()}
+                              value=""
+                              checked={formData.brandId === ''}
                               onChange={handleChange}
-                              className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4"
                             />
-                            <span className="text-sm text-gray-700">{brand.name}</span>
+                            <span className="text-neutral-500 italic">No brand</span>
                           </label>
-                        ))}
-                      </>
-                    ) : (
-                      <p className="text-sm text-gray-500">No brands available</p>
-                    )}
+                          {brands.map(brand => (
+                            <label key={brand.id} className="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-1 rounded text-sm">
+                              <input
+                                type="radio"
+                                name="brandId"
+                                value={brand.id}
+                                checked={formData.brandId === brand.id.toString()}
+                                onChange={handleChange}
+                                className="w-4 h-4"
+                              />
+                              <span className="text-neutral-700">{brand.name}</span>
+                            </label>
+                          ))}
+                        </>
+                      ) : (
+                        <p className="text-xs text-neutral-500">No brands available</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="4"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter product description"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing & Inventory */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Inventory</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price ($) *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="0.00"
-                  step="0.01"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cost ($)
-                </label>
-                <input
-                  type="number"
-                  name="cost"
-                  value={formData.cost}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="0.00"
-                  step="0.01"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Stock Quantity *
-                </label>
-                <input
-                  type="number"
-                  name="stockQuantity"
-                  value={formData.stockQuantity}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="0"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Attributes */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Attributes</h2>
-              <button
-                type="button"
-                onClick={addAttribute}
-                className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
-              >
-                + Add Attribute
-              </button>
-            </div>
-            <div className="space-y-3">
-              {formData.attributes.map((attr, index) => (
-                <div key={index} className="flex gap-2">
-                  <select
-                    value={attr.attributeId}
-                    onChange={(e) => handleAttributeChange(index, 'attributeId', e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Select attribute</option>
-                    {Array.isArray(attributes) && attributes.map(a => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={attr.value}
-                    onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Attribute value"
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows="4"
+                    className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 text-sm"
+                    placeholder="Enter product description"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeAttribute(index)}
-                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <FaTimes />
-                  </button>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
 
-          {/* Images */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Images</h2>
-            
-            {/* Image Upload Area */}
-            <label className="block border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer mb-4">
-              <FaImage className="mx-auto text-4xl text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-2">Click to upload or drag and drop</p>
-              <p className="text-sm text-gray-500">PNG, JPG up to 10MB</p>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={uploadingImage}
-                className="hidden"
-              />
-            </label>
+            {/* Pricing & Inventory */}
+            <div className="bg-white border border-neutral-200 p-6">
+              <h2 className="text-sm font-mono uppercase tracking-wider text-neutral-900 mb-6">Pricing & Inventory</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                    Price ($) *
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900"
+                    placeholder="0.00"
+                    step="0.01"
+                    required
+                  />
+                </div>
 
-            {/* Uploaded Images */}
-            {images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {images.map((img, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={img.imageUrl}
-                      alt={img.altText}
-                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                    Cost ($)
+                  </label>
+                  <input
+                    type="number"
+                    name="cost"
+                    value={formData.cost}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-500 mb-2">
+                    Stock Quantity *
+                  </label>
+                  <input
+                    type="number"
+                    name="stockQuantity"
+                    value={formData.stockQuantity}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900"
+                    placeholder="0"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Attributes */}
+            <div className="bg-white border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-sm font-mono uppercase tracking-wider text-neutral-900">Attributes</h2>
+                <button
+                  type="button"
+                  onClick={addAttribute}
+                  className="h-8 px-3 bg-neutral-900 text-white text-xs font-mono uppercase tracking-wider hover:bg-neutral-800 transition-colors"
+                >
+                  + Add
+                </button>
+              </div>
+              <div className="space-y-3">
+                {formData.attributes.map((attr, index) => (
+                  <div key={index} className="flex gap-2">
+                    <select
+                      value={attr.attributeId}
+                      onChange={(e) => handleAttributeChange(index, 'attributeId', e.target.value)}
+                      className="flex-1 px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 text-sm"
+                    >
+                      <option value="">Select attribute</option>
+                      {Array.isArray(attributes) && attributes.map(a => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={attr.value}
+                      onChange={(e) => handleAttributeChange(index, 'value', e.target.value)}
+                      className="flex-1 px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 text-sm"
+                      placeholder="Attribute value"
                     />
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeAttribute(index)}
+                      className="px-3 py-2 text-neutral-600 hover:bg-neutral-100 transition-colors"
                     >
-                      <FaTimes size={12} />
+                      <FaTimes />
                     </button>
-                    {img.isPrimary && (
-                      <span className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                        Primary
-                      </span>
-                    )}
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Status */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Status</h2>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-              <option value="featured">Featured</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-2">
-              Draft: Not visible to customers
-              <br />
-              Published: Visible in store
-              <br />
-              Featured: Highlighted on homepage
-            </p>
+            {/* Images */}
+            <div className="bg-white border border-neutral-200 p-6">
+              <h2 className="text-sm font-mono uppercase tracking-wider text-neutral-900 mb-6">Product Images</h2>
+              
+              {/* Image Upload Area */}
+              <label className="block border border-dashed border-neutral-300 p-8 text-center hover:border-neutral-900 transition-colors cursor-pointer mb-4">
+                <FaImage className="mx-auto text-3xl text-neutral-400 mb-3" />
+                <p className="text-neutral-600 text-sm mb-1">Click to upload or drag and drop</p>
+                <p className="text-xs text-neutral-500">PNG, JPG up to 10MB</p>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="hidden"
+                />
+              </label>
+
+              {/* Uploaded Images */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {images.map((img, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={img.imageUrl}
+                        alt={img.altText}
+                        className="w-full h-32 object-cover border border-neutral-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 p-1 bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <FaTimes size={12} />
+                      </button>
+                      {img.isPrimary && (
+                        <span className="absolute bottom-1 left-1 bg-green-600 text-white text-xs px-2 py-1">
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
-            >
-              <FaSave />
-              {loading ? 'Creating...' : 'Create Product'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/products')}
-              className="w-full px-4 py-3 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-            >
-              Cancel
-            </button>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Status */}
+            <div className="bg-white border border-neutral-200 p-6">
+              <h2 className="text-sm font-mono uppercase tracking-wider text-neutral-900 mb-4">Status</h2>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-neutral-200 bg-white focus:outline-none focus:border-neutral-900 text-sm"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="featured">Featured</option>
+              </select>
+              <p className="text-xs text-neutral-500 mt-3 font-mono leading-relaxed">
+                Draft • Not visible<br/>
+                Published • Visible<br/>
+                Featured • Homepage
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="bg-white border border-neutral-200 p-6 space-y-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-9 flex items-center justify-center gap-2 px-4 bg-neutral-900 text-white text-xs font-mono uppercase tracking-wider hover:bg-neutral-800 transition-colors disabled:opacity-50"
+              >
+                <FaSave size={12} />
+                {loading ? 'Creating...' : 'Create Product'}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/admin/products')}
+                className="w-full h-9 px-4 border border-neutral-200 text-neutral-700 text-xs font-mono uppercase tracking-wider hover:bg-neutral-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

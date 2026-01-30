@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductCard from "../ProductCardDrawer/ProductCardDrawer.jsx";
 import TotalCart from "../TotalCart/TotalCart.jsx";
 import { useCart } from "../../Context/CartContext";
@@ -6,6 +7,7 @@ import { useCart } from "../../Context/CartContext";
 const ShoppingCardDrawer = () => {
   // Transfer status state logic
   const [status, setStatus] = useState(true);
+  const navigate = useNavigate();
 
   // Use CartContext
   const { cartItems, cartTotal } = useCart();
@@ -56,7 +58,10 @@ const ShoppingCardDrawer = () => {
             />
           </div>
           <TotalCart total={cartTotal} />
-          <button className="w-full bg-[#0F2854] text-[#ffffff] py-3 rounded-md font-bold hover:bg-[#0a1c3b] transition-colors mt-4">
+          <button 
+            onClick={() => navigate('/checkout')}
+            className="w-full bg-[#0F2854] text-[#ffffff] py-3 rounded-md font-bold hover:bg-[#0a1c3b] transition-colors mt-4"
+          >
             Checkout
           </button>
         </>

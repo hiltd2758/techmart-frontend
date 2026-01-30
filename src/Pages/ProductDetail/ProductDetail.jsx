@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FaStar, FaShoppingCart, FaMinus, FaPlus } from "react-icons/fa";
-import HomeNavbar from "../HomeNavbar/HomeNavbar.jsx";
-import Footer from "../Footer/Footer.jsx";
-import { productAPI } from "../../services/productAPI";
+import HomeNavbar from "../../Components/HomeNavbar/HomeNavbar.jsx";
+import Footer from "../../Components/Footer/Footer.jsx";
+import { productAPI } from "../../api/productAPI";
 
 const ProductDetail = () => {
   const { id } = useParams();
