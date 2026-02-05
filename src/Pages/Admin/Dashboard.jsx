@@ -1,302 +1,316 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FaBox,
   FaShoppingCart,
   FaUsers,
-  FaDollarSign,
   FaArrowUp,
   FaArrowDown,
-  FaDownload,
-  FaChevronRight,
 } from "react-icons/fa";
 import { productAPI } from "../../api/productAPI";
 import { customerAPI } from "../../api/customerAPI";
 
+/**
+ * DASHBOARD COMPONENT
+ * ==================
+ * Mục đích: Hiển thị tổng quan thống kê hệ thống
+ * - Tổng số sản phẩm, đơn hàng, người dùng
+ * - Danh sách đơn hàng gần đây
+ * - Top sản phẩm bán chạy
+ */
 const Dashboard = () => {
+  // ==========================================
+  // HOOKS & NAVIGATION
+  // ==========================================
+  const navigate = useNavigate();
+
+  // ==========================================
+  // STATE MANAGEMENT - Quản lý trạng thái
+  // ==========================================
+
+  /**
+   * stats: Mảng chứa các thống kê tổng quan
+   * Mỗi stat bao gồm: title (tiêu đề), value (giá trị), change (% thay đổi), icon (biểu tượng), route (liên kết)
+   */
   const [stats, setStats] = useState([
     {
-      title: "Total Products",
+      title: "Tổng sản phẩm",
       value: "0",
       change: "+0%",
       changeType: "increase",
       icon: FaBox,
+      route: "/admin/products",
     },
     {
-      title: "Total Orders",
+      title: "Tổng đơn hàng",
       value: "0",
       change: "+0%",
       changeType: "increase",
       icon: FaShoppingCart,
+      route: "/admin/orders",
     },
     {
-      title: "Total Users",
+      title: "Tổng người dùng",
       value: "0",
       change: "+0%",
       changeType: "increase",
       icon: FaUsers,
+      route: "/admin/users",
     },
   ]);
 
-  const [recentOrders, setRecentOrders] = useState([]);
+  /**
+   * topProducts: Top 3 sản phẩm có số lượng cao nhất
+   */
   const [topProducts, setTopProducts] = useState([]);
+
+  /**
+   * loading: Trạng thái đang tải dữ liệu
+   * true = đang tải, false = đã tải xong
+   */
   const [loading, setLoading] = useState(true);
 
+  // ==========================================
+  // DATA FETCHING - Lấy dữ liệu từ API
+  // ==========================================
+
   useEffect(() => {
+    /**
+     * Hàm lấy tất cả dữ liệu cần thiết cho Dashboard
+     * Chạy khi component được render lần đầu
+     */
     const fetchDashboardData = async () => {
       try {
+        // Bắt đầu loading
         setLoading(true);
 
+        // ----------------
+        // BƯỚC 1: Lấy dữ liệu sản phẩm
+        // ----------------
+        console.log("📦 Bước 1: Đang lấy danh sách sản phẩm...");
+        
         const warehouseRes = await productAPI.getWarehouseProducts({
           page: 0,
-          size: 1000,
+          size: 1000, // Lấy tối đa 1000 sản phẩm
         });
-        
-        console.log("=== WAREHOUSE API RESPONSE ===");
-        console.log("Full Response:", warehouseRes);
-        console.log("warehouseRes.data:", warehouseRes.data);
-        console.log("warehouseRes.data.data:", warehouseRes.data?.data);
-        
-        console.log("Response keys:", Object.keys(warehouseRes.data?.data || {}));
-        console.log("totalElements:", warehouseRes.data?.data?.totalElements);
-        console.log("content:", warehouseRes.data?.data?.content);
-        console.log("totalPages:", warehouseRes.data?.data?.totalPages);
-        console.log("pageNumber:", warehouseRes.data?.data?.pageNumber);
-        console.log("pageSize:", warehouseRes.data?.data?.pageSize);
-        
+
+        // Trích xuất dữ liệu từ response
         const warehouseData = warehouseRes.data?.data;
         let totalProductsCount = warehouseData?.totalElements || 0;
         let warehouseProducts = warehouseData?.content || [];
-        
-        console.log("totalProductsCount:", totalProductsCount);
-        console.log("warehouseProducts.length:", warehouseProducts.length);
-        console.log("warehouseProducts:", warehouseProducts);
-        
+
+        console.log(`✅ Tìm thấy ${totalProductsCount} sản phẩm`);
+
+        // Fallback: Nếu không có dữ liệu, thử API khác
         if (totalProductsCount === 0 && warehouseProducts.length === 0) {
-          console.log("⚠️ Warehouse endpoint trả về 0, đang fallback sang adminGetProducts...");
+          console.log("⚠️ Không có dữ liệu từ warehouse, thử API admin...");
+          
           const fallbackRes = await productAPI.adminGetProducts({
             page: 0,
             size: 1000,
           });
-          
-          console.log("=== FALLBACK ADMIN PRODUCTS RESPONSE ===");
-          console.log("Response keys:", Object.keys(fallbackRes.data?.data || {}));
-          console.log("totalElements:", fallbackRes.data?.data?.totalElements);
-          console.log("content length:", fallbackRes.data?.data?.content?.length);
-          
+
           totalProductsCount = fallbackRes.data?.data?.totalElements || 0;
           warehouseProducts = fallbackRes.data?.data?.content || [];
           
-          console.log("Fallback totalProductsCount:", totalProductsCount);
-          console.log("Fallback warehouseProducts.length:", warehouseProducts.length);
+          console.log(`✅ Tìm thấy ${totalProductsCount} sản phẩm từ admin API`);
         }
 
+        // ----------------
+        // BƯỚC 2: Lấy dữ liệu khách hàng
+        // ----------------
+        console.log("👥 Bước 2: Đang lấy danh sách khách hàng...");
+        
         const customersRes = await customerAPI.getCustomers(0, 10);
-        
-        console.log("=== CUSTOMERS API RESPONSE ===");
-        console.log("Full Response:", customersRes);
-        console.log("customersRes.data.data:", customersRes.data?.data);
-        
         const customersData = customersRes.data?.data;
         const totalCustomersCount = customersData?.totalElements || 0;
-        const allCustomers = customersData?.content || [];
-        
-        console.log("totalCustomersCount:", totalCustomersCount);
-        console.log("allCustomers.length:", allCustomers.length);
 
-        const totalRevenue = warehouseProducts.reduce(
-          (sum, product) => sum + (product.price || 0),
-          0
-        );
-        
-        console.log("totalRevenue:", totalRevenue);
-        console.log("=== CALCULATED STATS ===");
-        console.log("Total Orders (quantity > 0):", warehouseProducts.filter((p) => p.quantity > 0).length);
+        console.log(`✅ Tìm thấy ${totalCustomersCount} khách hàng`);
 
+        // ----------------
+        // BƯỚC 3: Tính toán thống kê
+        // ----------------
+        console.log("📊 Bước 3: Đang tính toán thống kê...");
+
+        // Đếm số đơn hàng = số sản phẩm có quantity > 0
+        const ordersCount = warehouseProducts.filter(
+          (product) => product.quantity > 0
+        ).length;
+
+        // Cập nhật stats với dữ liệu thực tế
         setStats([
           {
-            title: "Total Products",
-            value: totalProductsCount.toLocaleString(),
+            title: "Tổng sản phẩm",
+            value: totalProductsCount.toLocaleString(), // Định dạng số có dấu phẩy
             change: "+12%",
             changeType: "increase",
             icon: FaBox,
+            route: "/admin/products",
           },
           {
-            title: "Total Orders",
-            value: warehouseProducts
-              .filter((p) => p.quantity > 0)
-              .length.toString(),
+            title: "Tổng đơn hàng",
+            value: ordersCount.toString(),
             change: "+8%",
             changeType: "increase",
             icon: FaShoppingCart,
+            route: "/admin/orders",
           },
           {
-            title: "Total Users",
+            title: "Tổng người dùng",
             value: totalCustomersCount.toLocaleString(),
             change: "+23%",
             changeType: "increase",
             icon: FaUsers,
+            route: "/admin/users",
           },
         ]);
 
-        const ordersData = warehouseProducts.slice(0, 4).map((product, index) => ({
-          id: `#${10000 + index}`,
-          customer: product.sellerName || product.name || "Store",
-          amount: `$${product.price || 0}`,
-          status: product.quantity > 0 ? "In Stock" : "Out of Stock",
-          statusColor: product.quantity > 0 ? "green" : "red",
-        }));
-        setRecentOrders(ordersData);
-
+        // ----------------
+        // BƯỚC 4: Tìm Top 3 sản phẩm
+        // ----------------
+        // Sắp xếp theo quantity giảm dần, lấy 3 sản phẩm đầu
         const topProductsData = warehouseProducts
-          .filter((p) => p.thumbnail)
-          .sort((a, b) => (b.quantity || 0) - (a.quantity || 0))
-          .slice(0, 3)
+          .filter((product) => product.thumbnail) // Chỉ lấy sản phẩm có ảnh
+          .sort((a, b) => (b.quantity || 0) - (a.quantity || 0)) // Sắp xếp giảm dần
+          .slice(0, 3) // Lấy 3 sản phẩm đầu
           .map((product) => ({
             name: product.name,
             sold: product.quantity || 0,
             price: `$${product.price || 0}`,
-            image: product.thumbnail || "/arrivals/arrival_1.jpg",
+            image: product.thumbnail,
           }));
         setTopProducts(topProductsData);
 
+        console.log("✅ Hoàn thành tải dữ liệu Dashboard");
+        
+        // Tắt loading
         setLoading(false);
       } catch (error) {
-        console.error("❌ Lỗi khi fetch dữ liệu Dashboard:", error);
-        console.error("Error message:", error.message);
-        console.error("Error response:", error.response);
-        console.error("Error config:", error.config);
+        // Xử lý lỗi
+        console.error("❌ Lỗi khi tải dữ liệu:", error.message);
         setLoading(false);
       }
     };
 
+    // Gọi hàm fetch dữ liệu
     fetchDashboardData();
-  }, []);
+  }, []); // [] = chỉ chạy 1 lần khi component mount
 
+  // ==========================================
+  // RENDER UI - Hiển thị giao diện
+  // ==========================================
+
+  // Màn hình loading
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-neutral-50">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-neutral-500 mt-4 text-sm font-mono">Loading data...</p>
+          <p className="text-neutral-600 mt-4 text-sm">Đang tải dữ liệu...</p>
         </div>
       </div>
     );
   }
 
+  // Màn hình chính
   return (
     <div className="min-h-screen bg-neutral-50 p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* Header */}
+        {/* ========== HEADER - Tiêu đề trang ========== */}
         <div className="flex items-end justify-between pb-6 border-b border-neutral-200">
           <div>
             <h1 className="text-3xl font-light tracking-tight text-neutral-900">Dashboard</h1>
-            <p className="text-neutral-500 mt-1 text-sm font-mono">Real-time metrics</p>
+            <p className="text-neutral-500 mt-1 text-sm font-mono">Tổng quan hệ thống</p>
           </div>
-          <button className="h-9 px-4 bg-neutral-900 text-white text-xs font-mono uppercase tracking-wider hover:bg-neutral-800 transition-colors flex items-center gap-2">
-            <FaDownload size={12} />
-            Export
-          </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ========== STATS CARDS - Các thẻ thống kê ========== */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((stat, index) => (
-            <div
+            <button
               key={index}
-              className="bg-white border border-neutral-200 p-6 group hover:border-neutral-900 transition-colors"
+              onClick={() => navigate(stat.route)}
+              className="bg-white border border-neutral-200 p-6 hover:shadow-md hover:border-neutral-300 transition-all text-left cursor-pointer active:scale-95"
             >
-              <div className="flex items-start justify-between mb-8">
-                <div className="w-10 h-10 bg-neutral-100 flex items-center justify-center group-hover:bg-neutral-900 transition-colors">
-                  <stat.icon className="text-neutral-600 group-hover:text-white transition-colors" size={16} />
+              {/* Phần trên: Icon và % thay đổi */}
+              <div className="flex items-start justify-between mb-4">
+                {/* Icon */}
+                <div className="w-10 h-10 bg-neutral-100 flex items-center justify-center">
+                  <stat.icon className="text-neutral-600" size={20} />
                 </div>
-                <div className={`flex items-center gap-1 text-xs font-mono ${
-                  stat.changeType === "increase" ? "text-green-600" : "text-red-600"
-                }`}>
-                  {stat.changeType === "increase" ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
+                
+                {/* Phần trăm thay đổi */}
+                <div
+                  className={`flex items-center gap-1 text-xs font-mono ${
+                    stat.changeType === "increase"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {stat.changeType === "increase" ? (
+                    <FaArrowUp size={10} />
+                  ) : (
+                    <FaArrowDown size={10} />
+                  )}
                   {stat.change}
                 </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-xs font-mono uppercase tracking-wider text-neutral-400">{stat.title}</p>
-                <p className="text-3xl font-light text-neutral-900">{stat.value}</p>
+
+              {/* Phần dưới: Tiêu đề và giá trị */}
+              <div>
+                <p className="text-neutral-500 text-xs font-mono uppercase tracking-wider">{stat.title}</p>
+                <p className="text-2xl font-light text-neutral-900 mt-1">
+                  {stat.value}
+                </p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Recent Orders */}
-          <div className="lg:col-span-2 bg-white border border-neutral-200">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-900">Recent Orders</h2>
-              <a href="/admin/orders" className="text-xs font-mono text-neutral-500 hover:text-neutral-900 flex items-center gap-1 uppercase tracking-wider">
-                View All
-                <FaChevronRight size={8} />
-              </a>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-neutral-200">
-                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Order</th>
-                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Customer</th>
-                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Amount</th>
-                    <th className="text-left py-3 px-6 text-xs font-mono uppercase tracking-wider text-neutral-500">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map((order, index) => (
-                    <tr key={index} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
-                      <td className="py-4 px-6">
-                        <span className="font-mono text-sm text-neutral-900">{order.id}</span>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-neutral-600">{order.customer}</td>
-                      <td className="py-4 px-6">
-                        <span className="font-mono text-sm text-neutral-900">{order.amount}</span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-mono uppercase tracking-wider ${
-                          order.statusColor === "green" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        {/* ========== TOP PRODUCTS - Sản phẩm bán chạy ========== */}
+        <div className="bg-white border border-neutral-200">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-neutral-200">
+            <h2 className="text-lg font-light tracking-tight text-neutral-900">
+              Top sản phẩm
+            </h2>
+            <p className="text-neutral-500 text-xs font-mono mt-1">Sản phẩm có tồn kho cao nhất</p>
           </div>
 
-          {/* Top Products */}
-          <div className="bg-white border border-neutral-200">
-            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
-              <h2 className="text-xs font-mono uppercase tracking-wider text-neutral-900">Top Products</h2>
-              <a href="/admin/products" className="text-xs font-mono text-neutral-500 hover:text-neutral-900 flex items-center gap-1 uppercase tracking-wider">
-                View All
-                <FaChevronRight size={8} />
-              </a>
+          {/* Product Grid */}
+          {topProducts.length === 0 ? (
+            <div className="py-12 px-6 text-center text-sm text-neutral-500">
+              Chưa có dữ liệu
             </div>
-            <div className="divide-y divide-neutral-100">
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 divide-x divide-y divide-neutral-200">
               {topProducts.map((product, index) => (
-                <div key={index} className="p-4 flex items-center gap-4 hover:bg-neutral-50 transition-colors">
+                <div
+                  key={index}
+                  className="p-6 hover:bg-neutral-50 transition-colors"
+                >
+                  {/* Ảnh sản phẩm */}
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-14 h-14 object-cover border border-neutral-200"
+                    className="w-full h-32 object-cover border border-neutral-200 mb-4"
                   />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-neutral-900 truncate font-light">{product.name}</p>
-                    <p className="text-xs text-neutral-500 font-mono mt-0.5">{product.sold} units</p>
-                  </div>
-                  <span className="font-mono text-sm text-neutral-900 whitespace-nowrap">{product.price}</span>
+                  
+                  {/* Thông tin sản phẩm */}
+                  <p className="text-sm font-light text-neutral-900 line-clamp-2 mb-2">
+                    {product.name}
+                  </p>
+                  <p className="text-xs text-neutral-500 font-mono mb-3">
+                    Stock: <span className="font-mono text-neutral-900">{product.sold}</span>
+                  </p>
+                  <p className="text-lg font-light text-neutral-900">
+                    {product.price}
+                  </p>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -357,30 +357,50 @@ const handleConfirmCheckout = async () => {
 
         console.log('[Order] Order payload:', orderData);
 
-        // ✅ GỬI REQUEST TẠO ORDER - KHÔNG ĐỢI RESPONSE
-        orderAPI.createOrder(orderData)
-            .then(response => {
-                console.log('[Order] Create order response:', response.data);
-            })
-            .catch(error => {
-                // ⚠️ Bỏ qua timeout error - vì order vẫn đang được tạo ở backend
-                if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
-                    console.log('[Order] Request timeout, but order is being processed');
-                } else {
-                    console.error('[Order] Error:', error);
-                }
-            });
+            // Create the order (backend does not support GET by checkoutId)
+            const createResp = await orderAPI.createOrder(orderData);
+            console.log('[Order] Create order response:', createResp.data);
 
-        // ✅ NAVIGATE NGAY LẬP TỨC với checkoutId
-        // Payment confirmation page sẽ tự polling để lấy orderId
-        setLoading(false);
-        navigate(`/payment-confirmation`, { 
-    state: { 
-        checkoutId: checkoutId,
-        email: email,
-        totalAmount: checkoutData?.totalAmount || totalAmount
-    } 
-});
+            const createdOrder = createResp.data?.data;
+            const createdOrderId = Number(createdOrder?.orderId || createdOrder?.id);
+
+            if (!createdOrderId || !Number.isFinite(createdOrderId)) {
+                console.error('[Order] createOrder did not return a numeric orderId:', createdOrder);
+                setLoading(false);
+                alert('Order creation failed to return an order ID. Please try again or contact support.');
+                return;
+            }
+
+            // Optionally poll briefly for order details if backend is eventually consistent
+            let fetchedOrder = null;
+            const MAX_ATTEMPTS = 6;
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                try {
+                    const getResp = await orderAPI.getOrderById(createdOrderId);
+                    fetchedOrder = getResp.data?.data;
+                    if (fetchedOrder) break;
+                } catch (err) {
+                    console.warn(`[Order] Attempt ${attempt + 1} to fetch order ${createdOrderId} failed:`, err);
+                    // if 404, retry after wait; other errors, abort
+                    if (err.response && err.response.status !== 404) {
+                        break;
+                    }
+                }
+                // small delay before retry
+                await new Promise(res => setTimeout(res, 1000));
+            }
+
+            if (fetchedOrder) {
+                console.log('[Order] Order ready:', fetchedOrder);
+                setLoading(false);
+                navigate(`/payment-confirmation/${createdOrderId}`);
+                return;
+            } else {
+                setLoading(false);
+                alert('Order created but is not available yet. Please check your orders or contact support with your checkout reference.');
+                return;
+            }
+
 
     } catch (error) {
         console.error('[Order] Error:', error);

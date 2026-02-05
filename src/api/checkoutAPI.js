@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// ==================== AXIOS INSTANCE SETUP ====================
 const api = axios.create({
     baseURL: 'http://localhost:8080/api/v1/public',
     headers: {
@@ -7,39 +8,96 @@ const api = axios.create({
     },
 });
 
-// ============ REQUEST INTERCEPTOR - AUTO REFRESH WHEN EXPIRING SOON ============
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Kiểm tra xem token còn hiệu lực bao lâu
+ * @param {string} token - JWT token từ localStorage
+ * @returns {number} Thời gian còn lại (ms), hoặc -1 nếu token không hợp lệ
+ */
+function getTokenExpiryTime(token) {
+    if (!token) return -1;
+    
+    try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const expiresAtMs = tokenPayload.exp * 1000;
+        const currentTimeMs = Date.now();
+        
+        return expiresAtMs - currentTimeMs;
+    } catch (error) {
+        console.error('[Checkout API] Lỗi khi giải mã token:', error);
+        return -1;
+    }
+}
+
+/**
+ * Kiểm tra xem token có sắp hết hạn không (< 5 phút)
+ * @param {string} token - JWT token
+ * @returns {boolean} true nếu token sắp hết hạn, false nếu còn hạn
+ */
+function isTokenExpiringsSoon(token) {
+    const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+    const timeRemaining = getTokenExpiryTime(token);
+    return timeRemaining < REFRESH_THRESHOLD_MS;
+}
+
+/**
+ * Làm mới token hết hạn bằng refresh token
+ * @param {Object} config - Cấu hình request từ axios
+ * @returns {boolean} true nếu làm mới thành công, false nếu thất bại
+ */
+async function refreshTokenIfNeeded(config) {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    try {
+        const response = await axios.post(
+            'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
+        );
+
+        const newAccessToken = response.data?.data?.accessToken;
+        const newRefreshToken = response.data?.data?.refreshToken;
+
+        if (!newAccessToken) {
+            console.error('[Checkout API] Không nhận được access token mới');
+            return false;
+        }
+
+        localStorage.setItem('accessToken', newAccessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+
+        config.headers.Authorization = `Bearer ${newAccessToken}`;
+        console.log('[Checkout API] Token được làm mới thành công');
+        return true;
+    } catch (error) {
+        console.error('[Checkout API] Lỗi khi làm mới token:', error.message);
+        return false;
+    }
+}
+
+// ==================== REQUEST INTERCEPTOR ====================
 api.interceptors.request.use(
     async (config) => {
-        const token = localStorage.getItem('accessToken');
+        const accessToken = localStorage.getItem('accessToken');
 
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const expiresAt = payload.exp * 1000;
-                const now = Date.now();
+        if (!accessToken) {
+            return config;
+        }
 
-                if (expiresAt - now < 5 * 60 * 1000) {
-                    console.log('[Checkout API] Token expiring soon, refreshing...');
-
-                    const refreshToken = localStorage.getItem('refreshToken');
-                    if (refreshToken) {
-                        const { data } = await axios.post(
-                            `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
-                        );
-
-                        localStorage.setItem('accessToken', data.data.accessToken);
-                        localStorage.setItem('refreshToken', data.data.refreshToken);
-
-                        config.headers.Authorization = `Bearer ${data.data.accessToken}`;
-                        console.log('[Checkout API] Token refreshed successfully');
-                    }
-                } else {
-                    config.headers.Authorization = `Bearer ${token}`;
+        try {
+            if (isTokenExpiringsSoon(accessToken)) {
+                console.log('[Checkout API] Token sắp hết hạn, đang làm mới...');
+                const refreshSuccess = await refreshTokenIfNeeded(config);
+                
+                if (!refreshSuccess) {
+                    throw new Error('Token refresh failed');
                 }
-            } catch (error) {
-                console.error('[Checkout API] Error decoding/refreshing token:', error);
-                config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                config.headers.Authorization = `Bearer ${accessToken}`;
             }
+        } catch (error) {
+            console.error('[Checkout API] Lỗi khi xử lý token:', error.message);
+            config.headers.Authorization = `Bearer ${accessToken}`;
         }
 
         return config;
@@ -47,7 +105,7 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ============ RESPONSE INTERCEPTOR - HANDLE EXPIRED TOKEN ============
+// ==================== RESPONSE INTERCEPTOR ====================
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -59,19 +117,24 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken');
             if (refreshToken) {
                 try {
-                    const { data } = await axios.post(
-                        `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
+                    const response = await axios.post(
+                        'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
                     );
 
-                    localStorage.setItem('accessToken', data.data.accessToken);
-                    localStorage.setItem('refreshToken', data.data.refreshToken);
+                    const newAccessToken = response.data?.data?.accessToken;
+                    const newRefreshToken = response.data?.data?.refreshToken;
 
-                    originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+                    localStorage.setItem('accessToken', newAccessToken);
+                    localStorage.setItem('refreshToken', newRefreshToken);
+
+                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                    console.log('[Checkout API] Token được làm mới, thử lại request...');
                     return api(originalRequest);
-                } catch (err) {
+                } catch (refreshError) {
+                    console.error('[Checkout API] Làm mới token thất bại');
                     localStorage.clear();
                     window.location.href = '/login';
-                    return Promise.reject(err);
+                    return Promise.reject(refreshError);
                 }
             }
         }
@@ -80,28 +143,27 @@ api.interceptors.response.use(
     }
 );
 
-// ============ PAYMENT METHOD CONSTANTS ============
+// ==================== PAYMENT METHOD CONSTANTS ====================
 export const PAYMENT_METHODS = {
     VNPAY: 'VNPAY',
     CREDIT_CARD: 'CREDIT_CARD',
     COD: 'COD'
 };
 
-// ============ SHIPPING METHOD CONSTANTS ============
+// ==================== SHIPPING METHOD CONSTANTS ====================
 export const SHIPPING_METHODS = {
     STANDARD: 'STANDARD',
     EXPRESS: 'EXPRESS',
     SAME_DAY: 'SAME_DAY'
 };
 
-// ============ CHECKOUT API ENDPOINTS ============
+// ==================== API ENDPOINTS ====================
 export const checkoutAPI = {
     /**
-     * Create a new checkout
+     * Tạo checkout mới
      * POST /api/v1/public/checkouts
-     * ✅ Returns: { id, status, progress, totalAmount, paymentMethodId, shipmentMethodId, items[] }
-     * 
-     * Enhanced version that extracts and validates all required fields
+     * @param {Object} data - Dữ liệu checkout
+     * @returns {Promise} Response chứa checkout ID và các thông tin cơ bản
      */
     createCheckout: async (data) => {
         const response = await api.post('/checkouts', data);
@@ -111,16 +173,16 @@ export const checkoutAPI = {
             throw new Error('Invalid checkout response - missing data');
         }
         
-        // Extract checkout ID (usually in 'id' field for UUID)
+        // Lấy checkout ID từ response
         const checkoutId = checkoutData.id;
         if (!checkoutId) {
             throw new Error('Invalid checkout response - missing checkout id');
         }
         
-        // Ensure all required fields are present with fallbacks
+        // Chuẩn bị đầy đủ các trường cần thiết với giá trị mặc định
         const createdCheckout = {
             id: checkoutId,
-            checkoutId: checkoutId, // For backward compatibility
+            checkoutId: checkoutId, // Để tương thích ngược
             status: checkoutData.status || 'PENDING',
             progress: checkoutData.progress || 'CREATED',
             totalAmount: checkoutData.totalAmount || 0,
@@ -131,7 +193,7 @@ export const checkoutAPI = {
             updatedAt: checkoutData.updatedAt || new Date().toISOString()
         };
         
-        console.log('[CheckoutAPI] Created checkout:', createdCheckout);
+        console.log('[CheckoutAPI] Checkout được tạo:', createdCheckout);
         return {
             data: {
                 data: createdCheckout,
@@ -142,11 +204,10 @@ export const checkoutAPI = {
     },
 
     /**
-     * Get checkout details
+     * Lấy thông tin checkout
      * GET /api/v1/public/checkouts/{checkoutId}
-     * ✅ Returns: { id, status, progress, totalAmount, paymentMethodId, shipmentMethodId, items[] }
-     * 
-     * Enhanced version that extracts and validates all required fields
+     * @param {string} checkoutId - ID của checkout
+     * @returns {Promise} Response chứa thông tin chi tiết checkout
      */
     getCheckout: async (checkoutId) => {
         const response = await api.get(`/checkouts/${checkoutId}`);
@@ -156,7 +217,7 @@ export const checkoutAPI = {
             throw new Error('Invalid checkout response - missing data');
         }
         
-        // Normalize checkout data
+        // Chuẩn hóa dữ liệu checkout
         const checkout = {
             id: checkoutData.id || checkoutId,
             checkoutId: checkoutData.id || checkoutId,
@@ -168,10 +229,10 @@ export const checkoutAPI = {
             items: checkoutData.items || [],
             createdAt: checkoutData.createdAt || null,
             updatedAt: checkoutData.updatedAt || null,
-            ...checkoutData // Include any additional fields
+            ...checkoutData // Bao gồm các trường bổ sung từ server
         };
         
-        console.log('[CheckoutAPI] Fetched checkout:', checkout);
+        console.log('[CheckoutAPI] Lấy checkout:', checkout);
         return {
             data: {
                 data: checkout,
@@ -182,16 +243,11 @@ export const checkoutAPI = {
     },
 
     /**
-     * Update checkout information
+     * Cập nhật thông tin checkout
      * PUT /api/v1/public/checkouts
-     * Body: {
-     *   checkoutId: string,
-     *   shippingAddressId: number,
-     *   shipmentMethodId: string,
-     *   paymentMethodId: string,
-     *   promotionCode: string (optional),
-     *   note: string (optional)
-     * }
+     * @param {string} checkoutId - ID của checkout
+     * @param {Object} data - Dữ liệu cập nhật
+     * @returns {Promise} Response từ server
      */
     updateCheckout: (checkoutId, data) =>
         api.put('/checkouts', {
@@ -200,9 +256,11 @@ export const checkoutAPI = {
         }),
 
     /**
-     * Update payment method for a checkout
+     * Cập nhật phương thức thanh toán
      * PUT /api/v1/public/checkouts/{checkoutId}/payment-method
-     * Body: { paymentMethodId: string }
+     * @param {string} checkoutId - ID của checkout
+     * @param {string} paymentMethodId - ID phương thức thanh toán
+     * @returns {Promise} Response từ server
      */
     updatePaymentMethod: (checkoutId, paymentMethodId) =>
         api.put(`/checkouts/${checkoutId}/payment-method`, {
@@ -210,11 +268,10 @@ export const checkoutAPI = {
         }),
 
     /**
-     * Confirm checkout and create order
+     * Xác nhận checkout và tạo đơn hàng
      * PUT /api/v1/public/checkouts/status
-     * ✅ Returns: { orderId, checkoutId, status, totalAmount }
-     * 
-     * Enhanced version that extracts order ID from response
+     * @param {string} checkoutId - ID của checkout
+     * @returns {Promise} Response chứa orderId và trạng thái
      */
     confirmCheckout: async (checkoutId) => {
         const response = await api.put('/checkouts/status', { 
@@ -227,10 +284,10 @@ export const checkoutAPI = {
             throw new Error('Invalid checkout confirmation response - missing data');
         }
         
-        // Extract order ID from confirmation
+        // Lấy order ID từ response xác nhận
         const orderId = confirmData.orderId || confirmData.id;
         if (!orderId) {
-            console.warn('[CheckoutAPI] No orderId in confirmation response:', confirmData);
+            console.warn('[CheckoutAPI] Không tìm thấy orderId trong response:', confirmData);
         }
         
         const confirmed = {
@@ -241,7 +298,7 @@ export const checkoutAPI = {
             ...confirmData
         };
         
-        console.log('[CheckoutAPI] Checkout confirmed:', confirmed);
+        console.log('[CheckoutAPI] Checkout được xác nhận:', confirmed);
         return {
             data: {
                 data: confirmed,
@@ -252,8 +309,10 @@ export const checkoutAPI = {
     },
 
     /**
-     * Cancel checkout
+     * Hủy checkout
      * DELETE /api/v1/public/checkouts/{checkoutId}
+     * @param {string} checkoutId - ID của checkout
+     * @returns {Promise} Response xác nhận hủy
      */
     cancelCheckout: (checkoutId) =>
         api.delete(`/checkouts/${checkoutId}`),

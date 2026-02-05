@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// ==================== AXIOS INSTANCE SETUP ====================
 const api = axios.create({
     baseURL: 'http://localhost:8080/api/v1',
     headers: {
@@ -7,39 +8,96 @@ const api = axios.create({
     },
 });
 
-// ============ REQUEST INTERCEPTOR - AUTO REFRESH WHEN EXPIRING SOON ============
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Kiểm tra xem token còn hiệu lực bao lâu
+ * @param {string} token - JWT token từ localStorage
+ * @returns {number} Thời gian còn lại (ms), hoặc -1 nếu token không hợp lệ
+ */
+function getTokenExpiryTime(token) {
+    if (!token) return -1;
+    
+    try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const expiresAtMs = tokenPayload.exp * 1000;
+        const currentTimeMs = Date.now();
+        
+        return expiresAtMs - currentTimeMs;
+    } catch (error) {
+        console.error('[Order API] Lỗi khi giải mã token:', error);
+        return -1;
+    }
+}
+
+/**
+ * Kiểm tra xem token có sắp hết hạn không (< 5 phút)
+ * @param {string} token - JWT token
+ * @returns {boolean} true nếu token sắp hết hạn
+ */
+function isTokenExpiringsSoon(token) {
+    const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+    const timeRemaining = getTokenExpiryTime(token);
+    return timeRemaining < REFRESH_THRESHOLD_MS;
+}
+
+/**
+ * Làm mới token hết hạn bằng refresh token
+ * @param {Object} config - Cấu hình request từ axios
+ * @returns {boolean} true nếu làm mới thành công
+ */
+async function refreshTokenIfNeeded(config) {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    try {
+        const response = await axios.post(
+            'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
+        );
+
+        const newAccessToken = response.data?.data?.accessToken;
+        const newRefreshToken = response.data?.data?.refreshToken;
+
+        if (!newAccessToken) {
+            console.error('[Order API] Không nhận được access token mới');
+            return false;
+        }
+
+        localStorage.setItem('accessToken', newAccessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+
+        config.headers.Authorization = `Bearer ${newAccessToken}`;
+        console.log('[Order API] Token được làm mới thành công');
+        return true;
+    } catch (error) {
+        console.error('[Order API] Lỗi khi làm mới token:', error.message);
+        return false;
+    }
+}
+
+// ==================== REQUEST INTERCEPTOR ====================
 api.interceptors.request.use(
     async (config) => {
-        const token = localStorage.getItem('accessToken');
+        const accessToken = localStorage.getItem('accessToken');
 
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const expiresAt = payload.exp * 1000;
-                const now = Date.now();
+        if (!accessToken) {
+            return config;
+        }
 
-                if (expiresAt - now < 5 * 60 * 1000) {
-                    console.log('[Order API] Token expiring soon, refreshing...');
-
-                    const refreshToken = localStorage.getItem('refreshToken');
-                    if (refreshToken) {
-                        const { data } = await axios.post(
-                            `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
-                        );
-
-                        localStorage.setItem('accessToken', data.data.accessToken);
-                        localStorage.setItem('refreshToken', data.data.refreshToken);
-
-                        config.headers.Authorization = `Bearer ${data.data.accessToken}`;
-                        console.log('[Order API] Token refreshed successfully');
-                    }
-                } else {
-                    config.headers.Authorization = `Bearer ${token}`;
+        try {
+            if (isTokenExpiringsSoon(accessToken)) {
+                console.log('[Order API] Token sắp hết hạn, đang làm mới...');
+                const refreshSuccess = await refreshTokenIfNeeded(config);
+                
+                if (!refreshSuccess) {
+                    throw new Error('Token refresh failed');
                 }
-            } catch (error) {
-                console.error('[Order API] Error decoding/refreshing token:', error);
-                config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                config.headers.Authorization = `Bearer ${accessToken}`;
             }
+        } catch (error) {
+            console.error('[Order API] Lỗi khi xử lý token:', error.message);
+            config.headers.Authorization = `Bearer ${accessToken}`;
         }
 
         return config;
@@ -47,7 +105,7 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ============ RESPONSE INTERCEPTOR - HANDLE EXPIRED TOKEN ============
+// ==================== RESPONSE INTERCEPTOR ====================
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -59,19 +117,24 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken');
             if (refreshToken) {
                 try {
-                    const { data } = await axios.post(
-                        `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
+                    const response = await axios.post(
+                        'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
                     );
 
-                    localStorage.setItem('accessToken', data.data.accessToken);
-                    localStorage.setItem('refreshToken', data.data.refreshToken);
+                    const newAccessToken = response.data?.data?.accessToken;
+                    const newRefreshToken = response.data?.data?.refreshToken;
 
-                    originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+                    localStorage.setItem('accessToken', newAccessToken);
+                    localStorage.setItem('refreshToken', newRefreshToken);
+
+                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                    console.log('[Order API] Token được làm mới, thử lại request...');
                     return api(originalRequest);
-                } catch (err) {
+                } catch (refreshError) {
+                    console.error('[Order API] Làm mới token thất bại');
                     localStorage.clear();
                     window.location.href = '/login';
-                    return Promise.reject(err);
+                    return Promise.reject(refreshError);
                 }
             }
         }
@@ -80,14 +143,13 @@ api.interceptors.response.use(
     }
 );
 
-// ============ ORDER API ENDPOINTS ============
+// ==================== API ENDPOINTS ====================
 export const orderAPI = {
     /**
-     * Create order directly (not commonly used - use checkout flow instead)
+     * Tạo đơn hàng trực tiếp (thường dùng checkout flow thay vì đây)
      * POST /api/v1/public/orders
-     * ✅ Returns: { orderId, status, paymentStatus, shipmentStatus, progress, checkoutId, totalAmount, email, note }
-     * 
-     * Enhanced version that extracts and validates all required fields
+     * @param {Object} data - Dữ liệu đơn hàng
+     * @returns {Promise} Response chứa thông tin đơn hàng vừa tạo
      */
     createOrder: async (data) => {
         const response = await api.post('/public/orders', data);
@@ -97,16 +159,16 @@ export const orderAPI = {
             throw new Error('Invalid order creation response - missing data');
         }
         
-        // Extract numeric orderId (could be in 'id' or 'orderId' field depending on backend)
+        // Lấy order ID (có thể ở field 'id' hoặc 'orderId')
         const orderId = orderData.id || orderData.orderId;
         if (!orderId) {
             throw new Error('Invalid order response - missing orderId/id');
         }
         
-        // Ensure all required fields are present with fallbacks
+        // Chuẩn bị đầy đủ các trường cần thiết với giá trị mặc định
         const createdOrder = {
             orderId: orderId,
-            id: orderId, // For backward compatibility
+            id: orderId, // Để tương thích ngược
             status: orderData.status || 'PENDING',
             paymentStatus: orderData.paymentStatus || 'PENDING',
             shipmentStatus: orderData.shipmentStatus || 'PENDING',
@@ -118,7 +180,8 @@ export const orderAPI = {
             createdAt: orderData.createdAt || new Date().toISOString()
         };
         
-        console.log('[OrderAPI] Created order:', createdOrder);
+        console.log('[OrderAPI] Đơn hàng được tạo:', createdOrder);
+        localStorage.setItem('orderId', orderId.toString());
         return {
             data: {
                 data: createdOrder,
@@ -129,9 +192,10 @@ export const orderAPI = {
     },
 
     /**
-     * Get order by numeric ID
+     * Lấy thông tin đơn hàng theo ID
      * GET /api/v1/orders/{id}
-     * ✅ Returns: { orderId, status, paymentStatus, shipmentStatus, progress, checkoutId, totalAmount, email, note }
+     * @param {number} orderId - ID của đơn hàng
+     * @returns {Promise} Response chứa thông tin chi tiết đơn hàng
      */
     getOrderById: async (orderId) => {
         const response = await api.get(`/orders/${orderId}`);
@@ -141,7 +205,7 @@ export const orderAPI = {
             throw new Error('Invalid order response - missing data');
         }
         
-        // Ensure consistent data structure
+        // Chuẩn hóa cấu trúc dữ liệu đơn hàng
         const normalizedOrder = {
             orderId: orderData.id || orderData.orderId || orderId,
             id: orderData.id || orderData.orderId || orderId,
@@ -156,10 +220,10 @@ export const orderAPI = {
             paymentMethod: orderData.paymentMethod || 'UNKNOWN',
             createdAt: orderData.createdAt || null,
             updatedAt: orderData.updatedAt || null,
-            ...orderData // Include any additional fields from backend
+            ...orderData // Bao gồm các trường bổ sung từ backend
         };
         
-        console.log('[OrderAPI] Fetched order:', normalizedOrder);
+        console.log('[OrderAPI] Lấy đơn hàng:', normalizedOrder);
         return {
             data: {
                 data: normalizedOrder,
@@ -170,62 +234,11 @@ export const orderAPI = {
     },
 
     /**
-     * Get order by checkout ID (polling-friendly version)
-     * GET /api/v1/public/orders/checkout/{checkoutId}
-     * ✅ Returns full order data when order is created from checkout
-     * ✅ Throws 404 if order not yet created
-     * 
-     * Enhanced version for polling - extracts and validates order data
-     */
-    getOrderByCheckoutId: async (checkoutId) => {
-        const response = await api.get(`/public/orders/checkout/${checkoutId}`);
-        const orderData = response.data?.data;
-        
-        if (!orderData) {
-            throw new Error('Invalid order response - missing data');
-        }
-        
-        // Extract orderId
-        const orderId = orderData.id || orderData.orderId;
-        if (!orderId) {
-            throw new Error('Invalid order response - missing orderId');
-        }
-        
-        // Normalize order data
-        const normalizedOrder = {
-            orderId: orderId,
-            id: orderId,
-            status: orderData.status || 'PENDING',
-            paymentStatus: orderData.paymentStatus || 'PENDING',
-            shipmentStatus: orderData.shipmentStatus || 'PENDING',
-            progress: orderData.progress || 'CREATED',
-            checkoutId: orderData.checkoutId || checkoutId,
-            totalAmount: orderData.totalAmount || 0,
-            email: orderData.email || '',
-            note: orderData.note || '',
-            paymentMethodId: orderData.paymentMethodId || orderData.paymentMethod || 'UNKNOWN',
-            shipmentMethodId: orderData.shipmentMethodId || orderData.shipmentMethod || 'UNKNOWN',
-            customerId: orderData.customerId || null,
-            numberItem: orderData.numberItem || 0,
-            promotionCode: orderData.promotionCode || null,
-            attributes: orderData.attributes || {},
-            createdAt: orderData.createdAt || null,
-            updatedAt: orderData.updatedAt || null
-        };
-        
-        console.log('[OrderAPI] Fetched order by checkoutId:', normalizedOrder);
-        return {
-            data: {
-                data: normalizedOrder,
-                message: response.data?.message,
-                timestamp: response.data?.timestamp
-            }
-        };
-    },
-
-    /**
-     * Get user's orders with pagination
+     * Lấy danh sách đơn hàng của khách hàng (phân trang)
      * GET /api/v1/public/orders/my-orders
+     * @param {number} page - Số trang (mặc định 0)
+     * @param {number} size - Số item mỗi trang (mặc định 10)
+     * @returns {Promise} Response chứa danh sách đơn hàng
      */
     getMyOrders: (page = 0, size = 10) => 
         api.get('/public/orders/my-orders', {
@@ -233,15 +246,20 @@ export const orderAPI = {
         }),
 
     /**
-     * Get order details with items
+     * Lấy chi tiết đơn hàng (bao gồm các sản phẩm)
      * GET /api/v1/public/orders/{id}/details
+     * @param {number} orderId - ID của đơn hàng
+     * @returns {Promise} Response chứa chi tiết đơn hàng
      */
     getOrderDetails: (orderId) => 
         api.get(`/public/orders/${orderId}/details`),
 
     /**
-     * Cancel order
+     * Hủy đơn hàng
      * PUT /api/v1/orders/{id}/cancel
+     * @param {number} orderId - ID của đơn hàng
+     * @param {string} reason - Lý do hủy (mặc định: người dùng hủy)
+     * @returns {Promise} Response xác nhận hủy
      */
     cancelOrder: (orderId, reason = 'Cancelled by user') => 
         api.put(`/orders/${orderId}/cancel`, null, {
@@ -249,9 +267,10 @@ export const orderAPI = {
         }),
 
     /**
-     * Get order status
+     * Lấy trạng thái đơn hàng
      * GET /api/v1/orders/{id}/status
-     * ✅ Returns: { status, paymentStatus, shipmentStatus, progress, orderId }
+     * @param {number} orderId - ID của đơn hàng
+     * @returns {Promise} Response chứa trạng thái hiện tại
      */
     getOrderStatus: async (orderId) => {
         const response = await api.get(`/orders/${orderId}/status`);
@@ -261,7 +280,7 @@ export const orderAPI = {
             throw new Error('Invalid status response - missing data');
         }
         
-        // Normalize status response
+        // Chuẩn hóa response trạng thái
         const orderStatus = {
             orderId: statusData.id || statusData.orderId || orderId,
             id: statusData.id || statusData.orderId || orderId,
@@ -270,10 +289,10 @@ export const orderAPI = {
             shipmentStatus: statusData.shipmentStatus || 'UNKNOWN',
             progress: statusData.progress || statusData.status,
             updatedAt: statusData.updatedAt || new Date().toISOString(),
-            ...statusData // Include any additional fields
+            ...statusData // Bao gồm các trường bổ sung
         };
         
-        console.log('[OrderAPI] Order status:', orderStatus);
+        console.log('[OrderAPI] Trạng thái đơn hàng:', orderStatus);
         return {
             data: {
                 data: orderStatus,
@@ -284,15 +303,20 @@ export const orderAPI = {
     },
 
     /**
-     * Update order payment status
+     * Cập nhật trạng thái thanh toán của đơn hàng
      * PUT /api/v1/public/orders/status
+     * @param {Object} data - Dữ liệu cập nhật trạng thái
+     * @returns {Promise} Response từ server
      */
     updateOrderPaymentStatus: (data) => 
         api.put('/public/orders/status', data),
 
     /**
-     * Check if order exists with specific status (for completed orders)
+     * Kiểm tra xem đơn hàng có tồn tại với trạng thái cụ thể không (cho đơn hoàn thành)
      * GET /api/v1/public/orders/completed
+     * @param {number} productId - ID sản phẩm
+     * @param {string} status - Trạng thái cần kiểm tra (mặc định: COMPLETED)
+     * @returns {Promise} Response chứa kết quả kiểm tra
      */
     checkOrderCompleted: (productId, status = 'COMPLETED') => 
         api.get('/public/orders/completed', {

@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// ==================== AXIOS INSTANCE SETUP ====================
 const api = axios.create({
     baseURL: 'http://localhost:8080/api/v1',
     headers: {
@@ -7,41 +8,97 @@ const api = axios.create({
     },
 });
 
-// ============ REQUEST INTERCEPTOR - AUTO REFRESH KHI GẦN HẾT HẠN ============
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Kiểm tra xem token còn hiệu lực bao lâu
+ * @param {string} token - JWT token từ localStorage
+ * @returns {number} Thời gian còn lại (ms), hoặc -1 nếu token không hợp lệ
+ */
+function getTokenExpiryTime(token) {
+    if (!token) return -1;
+    
+    try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const expiresAtMs = tokenPayload.exp * 1000;
+        const currentTimeMs = Date.now();
+        
+        return expiresAtMs - currentTimeMs;
+    } catch (error) {
+        console.error('[Product API] Lỗi khi giải mã token:', error);
+        return -1;
+    }
+}
+
+/**
+ * Kiểm tra xem token có sắp hết hạn không (< 5 phút)
+ * @param {string} token - JWT token
+ * @returns {boolean} true nếu token sắp hết hạn
+ */
+function isTokenExpiringsSoon(token) {
+    const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+    const timeRemaining = getTokenExpiryTime(token);
+    return timeRemaining < REFRESH_THRESHOLD_MS;
+}
+
+/**
+ * Làm mới token hết hạn bằng refresh token
+ * @param {Object} config - Cấu hình request từ axios
+ * @returns {boolean} true nếu làm mới thành công
+ */
+async function refreshTokenIfNeeded(config) {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    try {
+        const response = await axios.post(
+            'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
+        );
+
+        const newAccessToken = response.data?.data?.accessToken;
+        const newRefreshToken = response.data?.data?.refreshToken;
+
+        if (!newAccessToken) {
+            console.error('[Product API] Không nhận được access token mới');
+            return false;
+        }
+
+        localStorage.setItem('accessToken', newAccessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+
+        config.headers.Authorization = `Bearer ${newAccessToken}`;
+        console.log('[Product API] Token được làm mới thành công');
+        return true;
+    } catch (error) {
+        console.error('[Product API] Lỗi khi làm mới token:', error.message);
+        return false;
+    }
+}
+
+// ==================== REQUEST INTERCEPTOR ====================
+// Mục đích: Tự động làm mới token khi sắp hết hạn
 api.interceptors.request.use(
     async (config) => {
-        const token = localStorage.getItem('accessToken');
+        const accessToken = localStorage.getItem('accessToken');
 
-        if (token) {
-            try {
-                // Decode JWT để check expiration
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const expiresAt = payload.exp * 1000; // Convert to milliseconds
-                const now = Date.now();
+        if (!accessToken) {
+            return config;
+        }
 
-                // Nếu token còn < 5 phút → refresh ngay
-                if (expiresAt - now < 5 * 60 * 1000) {
-                    console.log('Token sắp hết hạn, đang refresh...');
-
-                    const refreshToken = localStorage.getItem('refreshToken');
-                    if (refreshToken) {
-                        const { data } = await axios.post(
-                            `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
-                        );
-
-                        localStorage.setItem('accessToken', data.data.accessToken);
-                        localStorage.setItem('refreshToken', data.data.refreshToken);
-
-                        config.headers.Authorization = `Bearer ${data.data.accessToken}`;
-                        console.log(' Token đã được refresh thành công');
-                    }
-                } else {
-                    config.headers.Authorization = `Bearer ${token}`;
+        try {
+            if (isTokenExpiringsSoon(accessToken)) {
+                console.log('[Product API] Token sắp hết hạn, đang làm mới...');
+                const refreshSuccess = await refreshTokenIfNeeded(config);
+                
+                if (!refreshSuccess) {
+                    throw new Error('Token refresh failed');
                 }
-            } catch (error) {
-                console.error('Lỗi khi decode/refresh token:', error);
-                config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                config.headers.Authorization = `Bearer ${accessToken}`;
             }
+        } catch (error) {
+            console.error('[Product API] Lỗi khi xử lý token:', error.message);
+            config.headers.Authorization = `Bearer ${accessToken}`;
         }
 
         return config;
@@ -49,43 +106,46 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ============ RESPONSE INTERCEPTOR - XỬ LÝ KHI TOKEN ĐÃ HẾT HẠN ============
+// ==================== RESPONSE INTERCEPTOR ====================
+// Mục đích: Xử lý lỗi 401 khi token hết hạn
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // Xử lý lỗi 401 Unauthorized
+        // Xử lý token hết hạn
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
 
             const errorMessage = error.response?.data?.message || '';
 
-            // Kiểm tra nếu là lỗi JWT expired
+            // Kiểm tra xem có phải lỗi JWT expired
             if (errorMessage.includes('JWT expired') || errorMessage.includes('expired')) {
-                console.log(' Token đã hết hạn, đang thử refresh...');
+                console.log('[Product API] Token đã hết hạn, đang thử làm mới...');
 
                 const refreshToken = localStorage.getItem('refreshToken');
 
                 if (refreshToken) {
                     try {
-                        const { data } = await axios.post(
-                            `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
+                        const response = await axios.post(
+                            'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
                         );
 
-                        localStorage.setItem('accessToken', data.data.accessToken);
-                        localStorage.setItem('refreshToken', data.data.refreshToken);
+                        const newAccessToken = response.data?.data?.accessToken;
+                        const newRefreshToken = response.data?.data?.refreshToken;
 
-                        originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+                        localStorage.setItem('accessToken', newAccessToken);
+                        localStorage.setItem('refreshToken', newRefreshToken);
 
-                        console.log(' Đã refresh token, retry request...');
-                        return api(originalRequest); // Retry request với token mới
+                        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+                        console.log('[Product API] Token được làm mới, thử lại request...');
+                        return api(originalRequest); // Thử lại request với token mới
 
                     } catch (refreshError) {
-                        console.error(' Refresh token thất bại:', refreshError);
+                        console.error('[Product API] Làm mới token thất bại:', refreshError);
 
-                        // Hiển thị thông báo thân thiện
-                        alert(' Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+                        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
 
                         localStorage.clear();
                         window.location.href = '/login';
@@ -93,7 +153,7 @@ api.interceptors.response.use(
                     }
                 } else {
                     // Không có refresh token
-                    alert(' Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+                    alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
                     localStorage.clear();
                     window.location.href = '/login';
                 }
@@ -104,12 +164,15 @@ api.interceptors.response.use(
     }
 );
 
+// ==================== API ENDPOINTS ====================
+
 export const productAPI = {
-    // Public Product Endpoints
+    // ===== PUBLIC PRODUCT ENDPOINTS =====
 
     /**
-     * Get all published products with filters
-     * @param {Object} params - { categoryIds, brandIds, minPrice, maxPrice, inStock, sortBy, sortDirection, page, size }
+     * Lấy danh sách sản phẩm được công bố (với bộ lọc)
+     * @param {Object} params - Các tham số lọc
+     * @returns {Promise} Response chứa danh sách sản phẩm
      */
     getProducts: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -128,65 +191,74 @@ export const productAPI = {
     },
 
     /**
-     * Get featured products
-     * @param {number} limit - Number of products to fetch
+     * Lấy danh sách sản phẩm nổi bật
+     * @param {number} limit - Số lượng sản phẩm (mặc định 10)
+     * @returns {Promise} Response chứa danh sách sản phẩm nổi bật
      */
     getFeaturedProducts: (limit = 10) =>
         api.get(`/public/products/featured?limit=${limit}`),
 
     /**
-     * Get featured products by specific IDs
-     * @param {Array} ids - Array of product IDs
+     * Lấy sản phẩm nổi bật theo ID cụ thể
+     * @param {Array<number>} ids - Mảng ID sản phẩm
+     * @returns {Promise} Response chứa danh sách sản phẩm
      */
     getFeaturedProductsByIds: (ids = []) =>
         api.get(`/public/products/featured-by-ids?ids=${ids.join(',')}`),
 
     /**
-     * Get product summary by ID
-     * @param {number} id - Product ID
+     * Lấy thông tin sản phẩm tóm tắt theo ID
+     * @param {number} id - ID của sản phẩm
+     * @returns {Promise} Response chứa thông tin cơ bản sản phẩm
      */
     getProductById: (id) =>
         api.get(`/public/products/${id}`),
 
     /**
-     * Get full product detail by ID
-     * @param {number} id - Product ID
+     * Lấy thông tin sản phẩm đầy đủ theo ID
+     * @param {number} id - ID của sản phẩm
+     * @returns {Promise} Response chứa thông tin chi tiết sản phẩm
      */
     getProductDetail: (id) =>
         api.get(`/public/products/${id}/detail`),
 
     /**
-     * Get product variations/SKU combinations
-     * @param {number} id - Product ID
+     * Lấy các biến thể sản phẩm (SKU combinations)
+     * @param {number} id - ID của sản phẩm
+     * @returns {Promise} Response chứa danh sách biến thể
      */
     getProductVariations: (id) =>
         api.get(`/public/products/${id}/variations`),
 
     /**
-     * Get related products
-     * @param {number} id - Product ID
-     * @param {number} limit - Number of related products
+     * Lấy sản phẩm liên quan
+     * @param {number} id - ID của sản phẩm
+     * @param {number} limit - Số lượng sản phẩm liên quan (mặc định 10)
+     * @returns {Promise} Response chứa danh sách sản phẩm liên quan
      */
     getRelatedProducts: (id, limit = 10) =>
         api.get(`/public/products/${id}/related?limit=${limit}`),
 
     /**
-     * Get product by slug (SEO-friendly)
-     * @param {string} slug - Product slug
+     * Lấy sản phẩm theo slug (thân thiện với SEO)
+     * @param {string} slug - Slug của sản phẩm
+     * @returns {Promise} Response chứa thông tin sản phẩm
      */
     getProductBySlug: (slug) =>
         api.get(`/public/products/slug/${slug}`),
 
     /**
-     * Get product slug by ID
-     * @param {number} id - Product ID
+     * Lấy slug sản phẩm theo ID
+     * @param {number} id - ID của sản phẩm
+     * @returns {Promise} Response chứa slug
      */
     getProductSlug: (id) =>
         api.get(`/public/products/${id}/slug`),
 
     /**
-     * Get product attributes for filtering
+     * Lấy danh sách thuộc tính sản phẩm (cho bộ lọc)
      * @param {Object} params - { page, size }
+     * @returns {Promise} Response chứa danh sách thuộc tính
      */
     getAttributes: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -197,8 +269,9 @@ export const productAPI = {
     },
 
     /**
-     * Get product attribute groups
+     * Lấy nhóm thuộc tính sản phẩm
      * @param {Object} params - { page, size }
+     * @returns {Promise} Response chứa danh sách nhóm thuộc tính
      */
     getAttributeGroups: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -209,24 +282,27 @@ export const productAPI = {
     },
 
     /**
-     * Get option values for a specific product
-     * @param {number} productId - Product ID
+     * Lấy giá trị tùy chọn cho sản phẩm cụ thể
+     * @param {number} productId - ID của sản phẩm
+     * @returns {Promise} Response chứa danh sách giá trị tùy chọn
      */
     getProductOptionValues: (productId) =>
         api.get(`/public/products/${productId}/option-values`),
 
     /**
-     * Get option combinations (SKU variants)
-     * @param {number} productId - Product ID
+     * Lấy kết hợp tùy chọn (biến thể SKU)
+     * @param {number} productId - ID của sản phẩm
+     * @returns {Promise} Response chứa danh sách kết hợp tùy chọn
      */
     getProductOptionCombinations: (productId) =>
         api.get(`/public/products/${productId}/option-combinations`),
 
-    // ==================== ADMIN PRODUCT ENDPOINTS ====================
+    // ===== ADMIN PRODUCT ENDPOINTS =====
 
     /**
-     * Get all products for admin (with filters and pagination)
-     * @param {Object} params - { ids, categoryIds, brandIds, keyword, minPrice, maxPrice, isPublished, isFeatured, inStock, page, size }
+     * Lấy danh sách sản phẩm (admin - có bộ lọc và phân trang)
+     * @param {Object} params - Các tham số lọc
+     * @returns {Promise} Response chứa danh sách sản phẩm
      */
     adminGetProducts: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -247,37 +323,42 @@ export const productAPI = {
     },
 
     /**
-     * Get product by ID for admin
-     * @param {number} id - Product ID
+     * Lấy thông tin sản phẩm theo ID (admin)
+     * @param {number} id - ID của sản phẩm
+     * @returns {Promise} Response chứa thông tin sản phẩm
      */
     adminGetProductById: (id) =>
         api.get(`/products/${id}`),
 
     /**
-     * Create new product
-     * @param {Object} productData - ProductCreationDTO
+     * Tạo sản phẩm mới (admin)
+     * @param {Object} productData - Dữ liệu sản phẩm
+     * @returns {Promise} Response chứa sản phẩm vừa tạo
      */
     adminCreateProduct: (productData) =>
         api.post('/products', productData),
 
     /**
-     * Update existing product
-     * @param {number} id - Product ID
-     * @param {Object} productData - ProductUpdateDTO
+     * Cập nhật sản phẩm (admin)
+     * @param {number} id - ID của sản phẩm
+     * @param {Object} productData - Dữ liệu cập nhật
+     * @returns {Promise} Response từ server
      */
     adminUpdateProduct: (id, productData) =>
         api.put(`/products/${id}`, productData),
 
     /**
-     * Delete product
-     * @param {number} id - Product ID
+     * Xóa sản phẩm (admin)
+     * @param {number} id - ID của sản phẩm
+     * @returns {Promise} Response xác nhận xóa
      */
     adminDeleteProduct: (id) =>
         api.delete(`/products/${id}`),
 
     /**
-     * Get warehouse products with inventory info
+     * Lấy sản phẩm kho (với thông tin tồn kho)
      * @param {Object} params - { page, size, keyword, skuCode }
+     * @returns {Promise} Response chứa danh sách sản phẩm kho
      */
     getWarehouseProducts: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -289,8 +370,9 @@ export const productAPI = {
     },
 
     /**
-     * Advanced search for products (Admin)
-     * @param {Object} params - { keyword, categoryIds, brandIds, minPrice, maxPrice, inStock, isPublished, page, size, sort }
+     * Tìm kiếm sản phẩm nâng cao (admin)
+     * @param {Object} params - Các tham số tìm kiếm
+     * @returns {Promise} Response chứa danh sách sản phẩm tìm được
      */
     adminSearchProducts: (params = {}) => {
         const queryParams = new URLSearchParams();
@@ -310,8 +392,9 @@ export const productAPI = {
     },
 
     /**
-     * Public search for products (Customer)
-     * @param {Object} params - { q, categoryIds, brandIds, minPrice, maxPrice, inStock, isFeatured, page, size }
+     * Tìm kiếm sản phẩm công khai (khách hàng)
+     * @param {Object} params - Các tham số tìm kiếm
+     * @returns {Promise} Response chứa danh sách sản phẩm tìm được
      */
     publicSearchProducts: (params = {}) => {
         const queryParams = new URLSearchParams();

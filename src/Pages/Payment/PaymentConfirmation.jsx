@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { orderAPI } from '../../api/orderAPI';
 import { paymentAPI } from '../../api/paymentAPI';
 import HomeNavbar from '../../Components/HomeNavbar/HomeNavbar';
@@ -10,8 +10,9 @@ const PaymentConfirmation = () => {
     const navigate = useNavigate();
     
     // Get data from navigation state
-    const { checkoutId, email, totalAmount } = location.state || {};
-    
+    const { email, totalAmount } = location.state || {};
+    const { orderId: routeOrderId } = useParams();
+
     // State management
     const [orderId, setOrderId] = useState(null);
     const [orderData, setOrderData] = useState(null);
@@ -22,95 +23,61 @@ const PaymentConfirmation = () => {
     const [pollingCount, setPollingCount] = useState(0);
     const [statusMessage, setStatusMessage] = useState('Processing your order...');
 
-    // ============ STEP 1: POLLING FOR ORDER CREATION ============
+    // ============ STEP 1: FETCH ORDER BY orderId (created earlier) ============
     useEffect(() => {
-        if (!checkoutId) {
-            setError('No checkout information found');
+        const start = async () => {
+            const numericOrderId = Number(routeOrderId || (location.state && location.state.orderId));
+            if (!numericOrderId || !Number.isFinite(numericOrderId)) {
+                setError('No order ID provided. Please return to checkout and try again or contact support.');
+                setLoading(false);
+                return;
+            }
+
+            setOrderId(numericOrderId);
+            setStatusMessage('Fetching order details...');
+
+            // Try fetching order details with short retry loop (backend may be eventually consistent)
+            let fetched = null;
+            const MAX_ATTEMPTS = 6;
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                try {
+                    const resp = await orderAPI.getOrderById(numericOrderId);
+                    fetched = resp.data?.data;
+                    if (fetched) break;
+                } catch (err) {
+                    console.warn(`[Payment] Attempt ${attempt + 1} to fetch order ${numericOrderId} failed:`, err);
+                    if (err.response && err.response.status !== 404) {
+                        setError(`Error fetching order: ${err.response?.data?.message || err.message}`);
+                        setLoading(false);
+                        return;
+                    }
+                }
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            if (!fetched) {
+                setError('Order not found. Please contact support with your order reference.');
+                setLoading(false);
+                return;
+            }
+
+            setOrderData(fetched);
+            setOrderStatus(fetched.status);
+            setPaymentStatus(fetched.paymentStatus);
             setLoading(false);
-            return;
-        }
 
-        let pollingInterval;
-        let pollCount = 0;
-        const MAX_POLLS = 60; // 60 lần * 5 giây = 5 phút
-
-        const pollForOrder = async () => {
-            try {
-                console.log(`[Polling] Checking order creation... Attempt ${pollCount + 1}/${MAX_POLLS}`);
-                setStatusMessage(`Checking order status... (${pollCount + 1}/${MAX_POLLS})`);
-                
-                // ✅ GET order by checkoutId
-                const response = await orderAPI.getOrderByCheckoutId(checkoutId);
-                const order = response.data?.data;
-
-                if (order && order.orderId) {
-                    console.log('[Polling] Order found:', order);
-                    
-                    setOrderId(order.orderId);
-                    setOrderData(order);
-                    setOrderStatus(order.status);
-                    setPaymentStatus(order.paymentStatus);
-                    setLoading(false);
-                    
-                    // ✅ Stop polling khi đã có orderId
-                    clearInterval(pollingInterval);
-                    
-                    // ✅ Nếu payment method là VNPAY và chưa thanh toán, init payment
-                    if (order.paymentMethodId === 'VNPAY' && order.paymentStatus === 'PENDING') {
-                        setStatusMessage('Initializing payment...');
-                        initPayment(order.orderId);
-                    } else if (order.paymentMethodId === 'COD') {
-                        setStatusMessage('Order confirmed! Cash on delivery.');
-                        // Redirect to success page after 2 seconds
-                        setTimeout(() => {
-                            navigate(`/order-success/${order.orderId}`);
-                        }, 2000);
-                    }
-                } else {
-                    pollCount++;
-                    setPollingCount(pollCount);
-                    
-                    if (pollCount >= MAX_POLLS) {
-                        clearInterval(pollingInterval);
-                        setError('Order creation timeout. Please check your orders or contact support.');
-                        setLoading(false);
-                    }
-                }
-            } catch (err) {
-                console.error('[Polling] Error:', err);
-                
-                // Nếu 404 (order chưa tạo xong), tiếp tục polling
-                if (err.response?.status === 404) {
-                    pollCount++;
-                    setPollingCount(pollCount);
-                    
-                    if (pollCount >= MAX_POLLS) {
-                        clearInterval(pollingInterval);
-                        setError('Order not found after timeout. Please contact support with your checkout ID.');
-                        setLoading(false);
-                    }
-                } else {
-                    // Lỗi khác (network, auth, etc.), dừng polling
-                    clearInterval(pollingInterval);
-                    setError(`Error checking order status: ${err.response?.data?.message || err.message}`);
-                    setLoading(false);
-                }
+            // If payment method is VNPAY and payment is pending, initiate payment
+            if ((fetched.paymentMethodId === 'VNPAY' || fetched.paymentMethod === 'VNPAY') && (fetched.paymentStatus === 'PENDING' || fetched.paymentStatus === 'WAITING')) {
+                setStatusMessage('Initializing payment...');
+                initPayment(numericOrderId);
+            } else if (fetched.paymentMethodId === 'COD' || fetched.paymentMethod === 'COD') {
+                setStatusMessage('Order confirmed! Cash on delivery.');
+                setTimeout(() => navigate(`/order-success/${numericOrderId}`), 2000);
             }
         };
 
-        // ✅ Poll ngay lập tức lần đầu
-        pollForOrder();
-        
-        // ✅ Poll mỗi 5 giây
-        pollingInterval = setInterval(pollForOrder, 5000);
-
-        // Cleanup on unmount
-        return () => {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-            }
-        };
-    }, [checkoutId, navigate]);
+        start();
+    }, [routeOrderId, location.state, navigate]);
 
     // ============ STEP 2: INIT PAYMENT WITH VNPAY ============
     const initPayment = async (orderId) => {
@@ -247,8 +214,8 @@ const PaymentConfirmation = () => {
                             {statusMessage}
                         </h2>
                         <p className="text-gray-600 mb-4">Please wait, this may take a moment...</p>
-                        {checkoutId && (
-                            <p className="text-xs text-gray-400 font-mono">Checkout: {checkoutId}</p>
+                        {location.state?.checkoutId && (
+                            <p className="text-xs text-gray-400 font-mono">Checkout: {location.state.checkoutId}</p>
                         )}
                         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                             <p className="text-sm text-blue-700">
@@ -276,11 +243,11 @@ const PaymentConfirmation = () => {
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">Order Processing Error</h2>
                         <p className="text-gray-600 mb-6">{error}</p>
-                        {checkoutId && (
+                        {location.state?.checkoutId && (
                             <div className="mb-6 p-4 bg-gray-100 rounded-lg">
                                 <p className="text-sm text-gray-700 mb-1">Reference Information:</p>
                                 <p className="text-xs text-gray-500 font-mono break-all">
-                                    Checkout ID: {checkoutId}
+                                    Checkout ID: {location.state.checkoutId}
                                 </p>
                                 {orderId && (
                                     <p className="text-xs text-gray-500 font-mono mt-1">

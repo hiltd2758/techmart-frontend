@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// ==================== AXIOS INSTANCE SETUP ====================
 const api = axios.create({
     baseURL: 'http://localhost:8080/api/v1',
     headers: {
@@ -7,39 +8,96 @@ const api = axios.create({
     },
 });
 
-// ============ REQUEST INTERCEPTOR - AUTO REFRESH WHEN EXPIRING SOON ============
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Kiểm tra xem token còn hiệu lực bao lâu
+ * @param {string} token - JWT token từ localStorage
+ * @returns {number} Thời gian còn lại (ms), hoặc -1 nếu token không hợp lệ
+ */
+function getTokenExpiryTime(token) {
+    if (!token) return -1;
+    
+    try {
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        const expiresAtMs = tokenPayload.exp * 1000;
+        const currentTimeMs = Date.now();
+        
+        return expiresAtMs - currentTimeMs;
+    } catch (error) {
+        console.error('[Payment API] Lỗi khi giải mã token:', error);
+        return -1;
+    }
+}
+
+/**
+ * Kiểm tra xem token có sắp hết hạn không (< 5 phút)
+ * @param {string} token - JWT token
+ * @returns {boolean} true nếu token sắp hết hạn
+ */
+function isTokenExpiringsSoon(token) {
+    const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+    const timeRemaining = getTokenExpiryTime(token);
+    return timeRemaining < REFRESH_THRESHOLD_MS;
+}
+
+/**
+ * Làm mới token hết hạn bằng refresh token
+ * @param {Object} config - Cấu hình request từ axios
+ * @returns {boolean} true nếu làm mới thành công
+ */
+async function refreshTokenIfNeeded(config) {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    try {
+        const response = await axios.post(
+            'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
+        );
+
+        const newAccessToken = response.data?.data?.accessToken;
+        const newRefreshToken = response.data?.data?.refreshToken;
+
+        if (!newAccessToken) {
+            console.error('[Payment API] Không nhận được access token mới');
+            return false;
+        }
+
+        localStorage.setItem('accessToken', newAccessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+
+        config.headers.Authorization = `Bearer ${newAccessToken}`;
+        console.log('[Payment API] Token được làm mới thành công');
+        return true;
+    } catch (error) {
+        console.error('[Payment API] Lỗi khi làm mới token:', error.message);
+        return false;
+    }
+}
+
+// ==================== REQUEST INTERCEPTOR ====================
 api.interceptors.request.use(
     async (config) => {
-        const token = localStorage.getItem('accessToken');
+        const accessToken = localStorage.getItem('accessToken');
 
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const expiresAt = payload.exp * 1000;
-                const now = Date.now();
+        if (!accessToken) {
+            return config;
+        }
 
-                if (expiresAt - now < 5 * 60 * 1000) {
-                    console.log('[Payment API] Token expiring soon, refreshing...');
-
-                    const refreshToken = localStorage.getItem('refreshToken');
-                    if (refreshToken) {
-                        const { data } = await axios.post(
-                            `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
-                        );
-
-                        localStorage.setItem('accessToken', data.data.accessToken);
-                        localStorage.setItem('refreshToken', data.data.refreshToken);
-
-                        config.headers.Authorization = `Bearer ${data.data.accessToken}`;
-                        console.log('[Payment API] Token refreshed successfully');
-                    }
-                } else {
-                    config.headers.Authorization = `Bearer ${token}`;
+        try {
+            if (isTokenExpiringsSoon(accessToken)) {
+                console.log('[Payment API] Token sắp hết hạn, đang làm mới...');
+                const refreshSuccess = await refreshTokenIfNeeded(config);
+                
+                if (!refreshSuccess) {
+                    throw new Error('Token refresh failed');
                 }
-            } catch (error) {
-                console.error('[Payment API] Error decoding/refreshing token:', error);
-                config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                config.headers.Authorization = `Bearer ${accessToken}`;
             }
+        } catch (error) {
+            console.error('[Payment API] Lỗi khi xử lý token:', error.message);
+            config.headers.Authorization = `Bearer ${accessToken}`;
         }
 
         return config;
@@ -47,7 +105,7 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// ============ RESPONSE INTERCEPTOR - HANDLE EXPIRED TOKEN ============
+// ==================== RESPONSE INTERCEPTOR ====================
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -59,19 +117,24 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refreshToken');
             if (refreshToken) {
                 try {
-                    const { data } = await axios.post(
-                        `http://localhost:8080/api/v1/auth/refresh-token/${refreshToken}`
+                    const response = await axios.post(
+                        'http://localhost:8080/api/v1/auth/refresh-token/' + refreshToken
                     );
 
-                    localStorage.setItem('accessToken', data.data.accessToken);
-                    localStorage.setItem('refreshToken', data.data.refreshToken);
+                    const newAccessToken = response.data?.data?.accessToken;
+                    const newRefreshToken = response.data?.data?.refreshToken;
 
-                    originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
+                    localStorage.setItem('accessToken', newAccessToken);
+                    localStorage.setItem('refreshToken', newRefreshToken);
+
+                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                    console.log('[Payment API] Token được làm mới, thử lại request...');
                     return api(originalRequest);
-                } catch (err) {
+                } catch (refreshError) {
+                    console.error('[Payment API] Làm mới token thất bại');
                     localStorage.clear();
                     window.location.href = '/login';
-                    return Promise.reject(err);
+                    return Promise.reject(refreshError);
                 }
             }
         }
@@ -80,15 +143,16 @@ api.interceptors.response.use(
     }
 );
 
-// ============ PAYMENT API ENDPOINTS ============
+// ==================== API ENDPOINTS ====================
 export const paymentAPI = {
     /**
-     * Create a new payment
+     * Tạo thanh toán mới
      * POST /api/v1/payments
-     * @param {string} checkoutId - Checkout ID
-     * @param {number} orderId - Order ID (optional)
-     * @param {number} amount - Payment amount
-     * @param {string} paymentMethod - Payment method (VNPAY, CREDIT_CARD, COD)
+     * @param {string} checkoutId - ID của checkout
+     * @param {number} orderId - ID của đơn hàng (tùy chọn)
+     * @param {number} amount - Số tiền thanh toán
+     * @param {string} paymentMethod - Phương thức thanh toán (VNPAY, CREDIT_CARD, COD)
+     * @returns {Promise} Response từ server
      */
     createPayment: (checkoutId, orderId, amount, paymentMethod) =>
         api.post('/payments', null, {
@@ -101,21 +165,32 @@ export const paymentAPI = {
         }),
 
     /**
-     * Initiate payment with provider (get redirect URL)
+     * Khởi tạo thanh toán với nhà cung cấp (lấy URL chuyển hướng)
      * GET /api/v1/payments/{orderId}/initiate
-     * ✅ Returns: { redirectUrl, paymentId, expiresAt, status, successful }
-     * 
-     * Enhanced version that extracts and validates all required fields
+     * @param {number} orderIdParam - ID của đơn hàng (hoặc lấy từ localStorage)
+     * @returns {Promise} Response chứa redirectUrl và thông tin thanh toán
      */
-    initiatePayment: async (orderId) => {
-        const response = await api.get(`/payments/${orderId}/initiate`);
+    initiatePayment: async (orderIdParam) => {
+        // Ưu tiên tham số orderId; nếu không có thì lấy từ localStorage
+        let orderId = orderIdParam ?? localStorage.getItem('orderId');
+        if (!orderId) {
+            throw new Error('Missing orderId for payment initiation');
+        }
+
+        // Chuyển đổi orderId thành số
+        const numericOrderId = Number(orderId);
+        if (!Number.isFinite(numericOrderId)) {
+            throw new Error('Invalid orderId for payment initiation - expected numeric orderId');
+        }
+
+        const response = await api.get(`/payments/${numericOrderId}/initiate`);
         const paymentData = response.data?.data;
         
         if (!paymentData) {
             throw new Error('Invalid payment initiation response - missing data');
         }
         
-        // Ensure all required fields are present with fallbacks
+        // Chuẩn bị đầy đủ các trường cần thiết với giá trị mặc định
         const initiatedPayment = {
             redirectUrl: paymentData.redirectUrl || null,
             paymentId: paymentData.paymentId || null,
@@ -124,7 +199,7 @@ export const paymentAPI = {
             successful: paymentData.successful !== undefined ? paymentData.successful : false
         };
         
-        console.log('[PaymentAPI] Initiated payment:', initiatedPayment);
+        console.log('[PaymentAPI] Thanh toán được khởi tạo:', initiatedPayment);
         return {
             data: {
                 data: initiatedPayment,
@@ -135,43 +210,57 @@ export const paymentAPI = {
     },
 
     /**
-     * Get payment by ID
+     * Lấy thông tin thanh toán theo ID
      * GET /api/v1/payments/{paymentId}
+     * @param {number} paymentId - ID của thanh toán
+     * @returns {Promise} Response chứa thông tin thanh toán
      */
     getPaymentById: (paymentId) =>
         api.get(`/payments/${paymentId}`),
 
     /**
-     * Get payment by checkout ID
+     * Lấy thông tin thanh toán theo checkout ID
      * GET /api/v1/payments/checkout/{checkoutId}
+     * @param {string} checkoutId - ID của checkout
+     * @returns {Promise} Response chứa thông tin thanh toán
      */
     getPaymentByCheckoutId: (checkoutId) =>
         api.get(`/payments/checkout/${checkoutId}`),
 
     /**
-     * Get payment by order ID
+     * Lấy thông tin thanh toán theo order ID
      * GET /api/v1/payments/order/{orderId}
+     * @param {number} orderId - ID của đơn hàng
+     * @returns {Promise} Response chứa thông tin thanh toán
      */
     getPaymentByOrderId: (orderId) =>
         api.get(`/payments/order/${orderId}`),
 
     /**
-     * Check payment status
+     * Kiểm tra trạng thái thanh toán
      * GET /api/v1/payments/{paymentId}/status
+     * @param {number} paymentId - ID của thanh toán
+     * @returns {Promise} Response chứa trạng thái hiện tại
      */
     checkPaymentStatus: (paymentId) =>
         api.get(`/payments/${paymentId}/status`),
 
     /**
-     * Get payments by status
+     * Lấy danh sách thanh toán theo trạng thái
      * GET /api/v1/payments/status/{status}
+     * @param {string} status - Trạng thái cần tìm
+     * @returns {Promise} Response chứa danh sách thanh toán
      */
     getPaymentsByStatus: (status) =>
         api.get(`/payments/status/${status}`),
 
     /**
-     * Process refund
+     * Xử lý hoàn tiền
      * POST /api/v1/payments/{paymentId}/refund
+     * @param {number} paymentId - ID của thanh toán
+     * @param {number} refundAmount - Số tiền hoàn
+     * @param {string} reason - Lý do hoàn tiền
+     * @returns {Promise} Response xác nhận hoàn tiền
      */
     processRefund: (paymentId, refundAmount, reason) =>
         api.post(`/payments/${paymentId}/refund`, {
@@ -180,36 +269,47 @@ export const paymentAPI = {
         }),
 
     /**
-     * Cancel payment
+     * Hủy thanh toán
      * POST /api/v1/payments/{paymentId}/cancel
+     * @param {number} paymentId - ID của thanh toán
+     * @returns {Promise} Response xác nhận hủy
      */
     cancelPayment: (paymentId) =>
         api.post(`/payments/${paymentId}/cancel`),
 
     /**
-     * Retry failed payment
+     * Thử lại thanh toán thất bại
      * POST /api/v1/payments/{paymentId}/retry
+     * @param {number} paymentId - ID của thanh toán
+     * @returns {Promise} Response từ server
      */
     retryPayment: (paymentId) =>
         api.post(`/payments/${paymentId}/retry`),
 
     /**
-     * Get supported payment methods
+     * Lấy danh sách phương thức thanh toán được hỗ trợ
      * GET /api/v1/payments/methods
+     * @returns {Promise} Response chứa danh sách phương thức
      */
     getSupportedMethods: () =>
         api.get('/payments/methods'),
 
     /**
-     * Check if payment method is available
+     * Kiểm tra xem phương thức thanh toán có sẵn không
      * GET /api/v1/payments/methods/{method}/available
+     * @param {string} method - Tên phương thức thanh toán
+     * @returns {Promise} Response xác nhận sẵn có
      */
     isMethodAvailable: (method) =>
         api.get(`/payments/methods/${method}/available`),
 
     /**
-     * Confirm COD payment
+     * Xác nhận thanh toán COD (Collect on Delivery)
      * POST /api/v1/payments/callback/cod
+     * @param {number} paymentId - ID của thanh toán
+     * @param {string} confirmationCode - Mã xác nhận
+     * @param {number} collectedAmount - Số tiền đã thu
+     * @returns {Promise} Response xác nhận
      */
     confirmCODPayment: (paymentId, confirmationCode, collectedAmount) =>
         api.post('/payments/callback/cod', null, {

@@ -227,77 +227,78 @@ const Settings = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-500 mt-1">
-          Manage your account and system configurations
-        </p>
-      </div>
-
-      {/* Success Message */}
-      {saveSuccess && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <FaCheck className="text-green-600" />
-          <p className="text-green-700 font-medium">
-            Changes saved successfully
-          </p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar Navigation */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <nav className="flex flex-col">
-              {tabs.map((tab) => {
-                const IconComponent = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      flex items-center gap-3 px-6 py-4 text-sm font-medium
-                      border-b border-gray-100 last:border-b-0
-                      transition-all duration-200
-                      ${
-                        activeTab === tab.id
-                          ? "bg-blue-50 text-blue-700 border-l-4 border-l-blue-600 pl-5"
-                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                      }
-                    `}
-                  >
-                    <IconComponent
-                      className={`text-lg ${
-                        activeTab === tab.id ? "text-blue-600" : "text-gray-400"
-                      }`}
-                    />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
+    <div className="min-h-screen bg-neutral-50 p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Page Header */}
+        <div className="flex items-end justify-between pb-6 border-b border-neutral-200">
+          <div>
+            <h1 className="text-3xl font-light tracking-tight text-neutral-900">Settings</h1>
+            <p className="text-neutral-500 mt-1 text-sm font-mono">Manage your account and system configurations</p>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="lg:col-span-3">
-          {/* Account Profile Tab */}
-          {activeTab === "profile" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+        {/* Success Message */}
+        {saveSuccess && (
+          <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200">
+            <FaCheck className="text-green-600" />
+            <p className="text-green-700 font-medium">
+              Changes saved successfully
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar Navigation */}
+          <div className="lg:col-span-1">
+            <div className="bg-white border border-neutral-200 overflow-hidden">
+              <nav className="flex flex-col">
+                {tabs.map((tab) => {
+                  const IconComponent = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        flex items-center gap-3 px-6 py-4 text-sm font-medium
+                        border-b border-neutral-200 last:border-b-0
+                        transition-all duration-200
+                        ${
+                          activeTab === tab.id
+                            ? "bg-neutral-100 text-neutral-900 border-l-4 border-l-neutral-900 pl-5"
+                            : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+                        }
+                      `}
+                    >
+                      <IconComponent
+                        className={`text-lg ${
+                          activeTab === tab.id ? "text-neutral-900" : "text-neutral-400"
+                        }`}
+                      />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Account Profile Tab */}
+            {activeTab === "profile" && (
+              <div className="bg-white border border-neutral-200 p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-light tracking-tight text-neutral-900">
                   Account Profile
                 </h2>
                 <button
                   onClick={() => setEditMode(!editMode)}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors
+                    flex items-center gap-2 px-4 py-2 font-medium transition-colors text-xs
                     ${
                       editMode
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                        ? "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                        : "bg-neutral-900 text-white hover:bg-neutral-800"
                     }
                   `}
                 >
@@ -317,12 +318,12 @@ const Settings = () => {
 
               {/* Profile Avatar */}
               <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                <div className="w-20 h-20 bg-gradient-to-br from-neutral-500 to-neutral-600 flex items-center justify-center text-white text-3xl font-bold">
                   {profileData.firstName.charAt(0)}
                   {profileData.lastName.charAt(0)}
                 </div>
                 {editMode && (
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                  <button className="px-4 py-2 border border-neutral-300 text-neutral-700 font-medium hover:bg-neutral-50 transition-colors text-xs">
                     Change Avatar
                   </button>
                 )}
@@ -332,7 +333,7 @@ const Settings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* First Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     First Name *
                   </label>
                   <input
@@ -343,11 +344,11 @@ const Settings = () => {
                     }
                     disabled={!editMode}
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         editMode
-                          ? "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                          ? "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
+                          : "border-neutral-200 bg-neutral-50 cursor-not-allowed"
                       }
                     `}
                   />
@@ -355,7 +356,7 @@ const Settings = () => {
 
                 {/* Last Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Last Name *
                   </label>
                   <input
@@ -366,11 +367,11 @@ const Settings = () => {
                     }
                     disabled={!editMode}
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         editMode
-                          ? "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                          ? "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
+                          : "border-neutral-200 bg-neutral-50 cursor-not-allowed"
                       }
                     `}
                   />
@@ -378,7 +379,7 @@ const Settings = () => {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Email Address *
                   </label>
                   <input
@@ -389,11 +390,11 @@ const Settings = () => {
                     }
                     disabled={!editMode}
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         editMode
-                          ? "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                          ? "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
+                          : "border-neutral-200 bg-neutral-50 cursor-not-allowed"
                       }
                     `}
                   />
@@ -401,7 +402,7 @@ const Settings = () => {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Phone Number
                   </label>
                   <input
@@ -412,11 +413,11 @@ const Settings = () => {
                     }
                     disabled={!editMode}
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         editMode
-                          ? "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                          ? "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
+                          : "border-neutral-200 bg-neutral-50 cursor-not-allowed"
                       }
                     `}
                   />
@@ -424,7 +425,7 @@ const Settings = () => {
 
                 {/* Company */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Company
                   </label>
                   <input
@@ -435,11 +436,11 @@ const Settings = () => {
                     }
                     disabled={!editMode}
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         editMode
-                          ? "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                          ? "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
+                          : "border-neutral-200 bg-neutral-50 cursor-not-allowed"
                       }
                     `}
                   />
@@ -447,7 +448,7 @@ const Settings = () => {
 
                 {/* Position */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Position
                   </label>
                   <input
@@ -458,11 +459,11 @@ const Settings = () => {
                     }
                     disabled={!editMode}
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         editMode
-                          ? "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          : "border-gray-200 bg-gray-50 cursor-not-allowed"
+                          ? "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
+                          : "border-neutral-200 bg-neutral-50 cursor-not-allowed"
                       }
                     `}
                   />
@@ -471,24 +472,24 @@ const Settings = () => {
 
               {/* Error Message */}
               {formErrors.submit && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                <div className="p-4 bg-red-50 border border-red-200 text-red-700">
                   {formErrors.submit}
                 </div>
               )}
 
               {/* Action Buttons */}
               {editMode && (
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-3 pt-4 border-t border-neutral-200">
                   <button
                     onClick={handleSaveProfile}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs"
                   >
                     <FaSave size={16} />
                     Save Changes
                   </button>
                   <button
                     onClick={() => setEditMode(false)}
-                    className="flex items-center gap-2 px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 px-6 py-2 border border-neutral-300 text-neutral-700 font-medium hover:bg-neutral-50 transition-colors text-xs"
                   >
                     <FaUndo size={16} />
                     Reset
@@ -502,14 +503,14 @@ const Settings = () => {
           {activeTab === "security" && (
             <div className="space-y-6">
               {/* Change Password */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
-                <h2 className="text-xl font-semibold text-gray-900">
+              <div className="bg-white border border-neutral-200 p-6 space-y-6">
+                <h2 className="text-xl font-light tracking-tight text-neutral-900">
                   Change Password
                 </h2>
 
                 {/* Current Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Current Password *
                   </label>
                   <div className="relative">
@@ -520,18 +521,18 @@ const Settings = () => {
                         handleSecurityChange("currentPassword", e.target.value)
                       }
                       className={`
-                        w-full px-4 py-2 pr-10 border rounded-lg transition-all
+                        w-full px-4 py-2 pr-10 border transition-all
                         ${
                           formErrors.currentPassword
                             ? "border-red-300 focus:ring-2 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            : "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                         }
                       `}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                     >
                       {showPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
@@ -545,7 +546,7 @@ const Settings = () => {
 
                 {/* New Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     New Password *
                   </label>
                   <input
@@ -555,11 +556,11 @@ const Settings = () => {
                       handleSecurityChange("newPassword", e.target.value)
                     }
                     className={`
-                      w-full px-4 py-2 border rounded-lg transition-all
+                      w-full px-4 py-2 border transition-all
                       ${
                         formErrors.newPassword
                           ? "border-red-300 focus:ring-2 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          : "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                       }
                     `}
                   />
@@ -572,7 +573,7 @@ const Settings = () => {
 
                 {/* Confirm Password */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Confirm Password *
                   </label>
                   <div className="relative">
@@ -583,11 +584,11 @@ const Settings = () => {
                         handleSecurityChange("confirmPassword", e.target.value)
                       }
                       className={`
-                        w-full px-4 py-2 pr-10 border rounded-lg transition-all
+                        w-full px-4 py-2 pr-10 border transition-all
                         ${
                           formErrors.confirmPassword
                             ? "border-red-300 focus:ring-2 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            : "border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                         }
                       `}
                     />
@@ -596,7 +597,7 @@ const Settings = () => {
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                     >
                       {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
@@ -609,10 +610,10 @@ const Settings = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <div className="flex gap-3 pt-4 border-t border-neutral-200">
                   <button
                     onClick={handleChangePassword}
-                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs"
                   >
                     <FaSave size={16} />
                     Update Password
@@ -621,25 +622,25 @@ const Settings = () => {
               </div>
 
               {/* Two-Factor Authentication */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+              <div className="bg-white border border-neutral-200 p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-light tracking-tight text-neutral-900">
                       Two-Factor Authentication
                     </h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-neutral-500 mt-1">
                       Add an extra layer of security to your account
                     </p>
                   </div>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                  <button className="px-4 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs">
                     Enable 2FA
                   </button>
                 </div>
               </div>
 
               {/* Login History */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="bg-white border border-neutral-200 p-6 space-y-4">
+                <h3 className="text-lg font-light tracking-tight text-neutral-900">
                   Recent Login Activity
                 </h3>
                 <div className="space-y-3">
@@ -662,18 +663,18 @@ const Settings = () => {
                   ].map((login, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100"
+                      className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-100"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-neutral-900">
                           {login.device}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-neutral-500">
                           {login.location}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-gray-700">
+                        <p className="text-sm font-medium text-neutral-700">
                           {login.date}
                         </p>
                         <p className="text-xs text-green-600">Current</p>
@@ -687,12 +688,12 @@ const Settings = () => {
 
           {/* Roles & Permissions Tab */}
           {activeTab === "roles" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+            <div className="bg-white border border-neutral-200 p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-light tracking-tight text-neutral-900">
                   Roles & Permissions
                 </h2>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                <button className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs">
                   <FaPlus size={16} />
                   New Role
                 </button>
@@ -702,24 +703,24 @@ const Settings = () => {
                 {roles.map((role) => (
                   <div
                     key={role.id}
-                    className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow"
+                    className="border border-neutral-200 p-6 hover:shadow-sm transition-shadow"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-light tracking-tight text-neutral-900">
                           {role.name}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-neutral-600 mt-1">
                           {role.description}
                         </p>
                       </div>
                       <span
                         className={`
-                        px-3 py-1 text-xs font-medium rounded-full
+                        px-3 py-1 text-xs font-medium
                         ${
                           role.status === "Active"
                             ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
+                            : "bg-neutral-100 text-neutral-700"
                         }
                       `}
                       >
@@ -729,37 +730,37 @@ const Settings = () => {
 
                     <div className="grid grid-cols-3 gap-4 mb-4">
                       <div>
-                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <p className="text-xs font-mono uppercase tracking-wider text-neutral-600">
                           Users
                         </p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">
+                        <p className="text-2xl font-light text-neutral-900 mt-1">
                           {role.users}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <p className="text-xs font-mono uppercase tracking-wider text-neutral-600">
                           Permissions
                         </p>
-                        <p className="text-2xl font-bold text-gray-900 mt-1">
+                        <p className="text-2xl font-light text-neutral-900 mt-1">
                           {role.permissions.length}
                         </p>
                       </div>
                       <div className="text-right">
-                        <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        <button className="px-4 py-2 border border-neutral-300 text-neutral-700 font-medium hover:bg-neutral-50 transition-colors text-xs">
                           Edit Role
                         </button>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
-                      <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-3">
+                    <div className="pt-4 border-t border-neutral-200">
+                      <p className="text-xs font-mono uppercase tracking-wider text-neutral-600 mb-3">
                         Permissions
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {role.permissions.map((perm, idx) => (
                           <span
                             key={idx}
-                            className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium"
+                            className="px-3 py-1 bg-neutral-50 text-neutral-700 text-xs font-medium border border-neutral-200"
                           >
                             {perm}
                           </span>
@@ -774,15 +775,15 @@ const Settings = () => {
 
           {/* System Preferences Tab */}
           {activeTab === "preferences" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">
+            <div className="bg-white border border-neutral-200 p-6 space-y-6">
+              <h2 className="text-xl font-light tracking-tight text-neutral-900">
                 System Preferences
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Theme */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Theme
                   </label>
                   <select
@@ -790,7 +791,7 @@ const Settings = () => {
                     onChange={(e) =>
                       handlePreferenceChange("theme", e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                   >
                     <option value="light">Light Mode</option>
                     <option value="dark">Dark Mode</option>
@@ -800,7 +801,7 @@ const Settings = () => {
 
                 {/* Language */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Language
                   </label>
                   <select
@@ -808,7 +809,7 @@ const Settings = () => {
                     onChange={(e) =>
                       handlePreferenceChange("language", e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                   >
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
@@ -819,7 +820,7 @@ const Settings = () => {
 
                 {/* Timezone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Timezone
                   </label>
                   <select
@@ -827,7 +828,7 @@ const Settings = () => {
                     onChange={(e) =>
                       handlePreferenceChange("timezone", e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                   >
                     <option value="UTC-8">UTC-8 (PST)</option>
                     <option value="UTC-5">UTC-5 (EST)</option>
@@ -838,7 +839,7 @@ const Settings = () => {
 
                 {/* Date Format */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Date Format
                   </label>
                   <select
@@ -846,7 +847,7 @@ const Settings = () => {
                     onChange={(e) =>
                       handlePreferenceChange("dateFormat", e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                   >
                     <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                     <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -856,7 +857,7 @@ const Settings = () => {
 
                 {/* Time Format */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Time Format
                   </label>
                   <select
@@ -864,7 +865,7 @@ const Settings = () => {
                     onChange={(e) =>
                       handlePreferenceChange("timeFormat", e.target.value)
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                   >
                     <option value="12h">12-Hour (AM/PM)</option>
                     <option value="24h">24-Hour</option>
@@ -873,7 +874,7 @@ const Settings = () => {
 
                 {/* Items Per Page */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Items Per Page
                   </label>
                   <select
@@ -884,7 +885,7 @@ const Settings = () => {
                         parseInt(e.target.value)
                       )
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent"
                   >
                     <option value={10}>10</option>
                     <option value={20}>20</option>
@@ -894,8 +895,8 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <button className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              <div className="flex gap-3 pt-4 border-t border-neutral-200">
+                <button className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs">
                   <FaSave size={16} />
                   Save Preferences
                 </button>
@@ -907,8 +908,8 @@ const Settings = () => {
           {activeTab === "notifications" && (
             <div className="space-y-6">
               {/* Email Notifications */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">
+              <div className="bg-white border border-neutral-200 p-6 space-y-4">
+                <h2 className="text-xl font-light tracking-tight text-neutral-900">
                   Email Notifications
                 </h2>
 
@@ -946,11 +947,11 @@ const Settings = () => {
                 ].map((notif) => (
                   <div
                     key={notif.key}
-                    className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100"
+                    className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-100"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{notif.label}</p>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="font-medium text-neutral-900">{notif.label}</p>
+                      <p className="text-sm text-neutral-600 mt-1">
                         {notif.description}
                       </p>
                     </div>
@@ -959,7 +960,7 @@ const Settings = () => {
                         type="checkbox"
                         checked={notifications[notif.key]}
                         onChange={() => handleNotificationChange(notif.key)}
-                        className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-5 h-5 text-neutral-900 focus:ring-2 focus:ring-neutral-500"
                       />
                     </label>
                   </div>
@@ -967,16 +968,16 @@ const Settings = () => {
               </div>
 
               {/* Notification Frequency */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">
+              <div className="bg-white border border-neutral-200 p-6 space-y-4">
+                <h2 className="text-xl font-light tracking-tight text-neutral-900">
                   Notification Frequency
                 </h2>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
                     How often would you like to receive notifications?
                   </label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                  <select className="w-full px-4 py-2 border border-neutral-300 focus:ring-2 focus:ring-neutral-500 focus:border-transparent">
                     <option>Instantly</option>
                     <option>Hourly</option>
                     <option>Daily</option>
@@ -986,7 +987,7 @@ const Settings = () => {
               </div>
 
               <div className="flex gap-3">
-                <button className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                <button className="flex items-center gap-2 px-6 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs">
                   <FaSave size={16} />
                   Save Settings
                 </button>
@@ -999,7 +1000,7 @@ const Settings = () => {
             <div className="space-y-6">
               {/* Available Integrations */}
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                <h2 className="text-xl font-light tracking-tight text-neutral-900 mb-6">
                   Integrations
                 </h2>
 
@@ -1007,35 +1008,35 @@ const Settings = () => {
                   {integrations.map((integration) => (
                     <div
                       key={integration.id}
-                      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+                      className="bg-white border border-neutral-200 p-6"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
-                          <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-2xl">
+                          <div className="w-16 h-16 bg-neutral-100 flex items-center justify-center text-2xl">
                             {integration.icon}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">
+                              <h3 className="text-lg font-light tracking-tight text-neutral-900">
                                 {integration.name}
                               </h3>
                               <span
                                 className={`
-                                px-3 py-1 text-xs font-medium rounded-full
+                                px-3 py-1 text-xs font-medium
                                 ${
                                   integration.status === "Connected"
                                     ? "bg-green-100 text-green-700"
-                                    : "bg-gray-100 text-gray-700"
+                                    : "bg-neutral-100 text-neutral-700"
                                 }
                               `}
                               >
                                 {integration.status}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-neutral-600">
                               {integration.description}
                             </p>
-                            <p className="text-xs text-gray-500 mt-2">
+                            <p className="text-xs text-neutral-500 mt-2">
                               Last sync: {integration.lastSync}
                             </p>
                           </div>
@@ -1043,15 +1044,15 @@ const Settings = () => {
                         <div className="flex gap-2">
                           {integration.status === "Connected" ? (
                             <>
-                              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                              <button className="px-4 py-2 border border-neutral-300 text-neutral-700 font-medium hover:bg-neutral-50 transition-colors text-xs">
                                 Settings
                               </button>
-                              <button className="px-4 py-2 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors">
+                              <button className="px-4 py-2 border border-red-300 text-red-700 font-medium hover:bg-red-50 transition-colors text-xs">
                                 Disconnect
                               </button>
                             </>
                           ) : (
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                            <button className="px-4 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs">
                               Connect
                             </button>
                           )}
@@ -1063,12 +1064,12 @@ const Settings = () => {
               </div>
 
               {/* API Keys */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+              <div className="bg-white border border-neutral-200 p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-light tracking-tight text-neutral-900">
                     API Keys
                   </h3>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors text-xs">
                     <FaPlus size={16} />
                     Generate Key
                   </button>
@@ -1078,23 +1079,23 @@ const Settings = () => {
                   {apiKeys.map((key) => (
                     <div
                       key={key.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100"
+                      className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-100"
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{key.name}</p>
-                        <p className="text-sm text-gray-500 font-mono mt-1">
+                        <p className="font-medium text-neutral-900">{key.name}</p>
+                        <p className="text-sm text-neutral-500 font-mono mt-1">
                           {maskApiKey(key.key)}
                         </p>
-                        <div className="flex gap-4 text-xs text-gray-500 mt-2">
+                        <div className="flex gap-4 text-xs text-neutral-500 mt-2">
                           <span>Created: {key.created}</span>
                           <span>Last used: {key.lastUsed}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                        <span className="px-3 py-1 text-xs font-medium bg-green-100 text-green-700">
                           {key.status}
                         </span>
-                        <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                        <button className="p-2 text-neutral-400 hover:text-neutral-600 transition-colors">
                           <FaTrash />
                         </button>
                       </div>
@@ -1106,6 +1107,7 @@ const Settings = () => {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 };
