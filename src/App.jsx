@@ -28,6 +28,7 @@ import CheckoutPage from "./Pages/Checkout/CheckoutPage.jsx";
 import PaymentConfirmation from "./Pages/Payment/PaymentConfirmation.jsx";
 import OrderSuccess from "./Pages/OrderSuccess.jsx";
 import OrderFailed from "./Pages/OrderFailed.jsx";
+import VerifyPage from "./Pages/Verify/VerifyPage.jsx";
 
 // Component để scroll to top khi route thay đổi
 function ScrollToTop() {
@@ -48,6 +49,7 @@ function App() {
         {/* Auth routes - Không Footer */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/email-verify" element={<VerifyPage />} />
 
         {/* Main routes - Có Footer */}
         <Route
@@ -94,10 +96,7 @@ function App() {
             </>
           }
         />
-        <Route
-          path="/product/:id"
-          element={<ProductDetail />}
-        />
+        <Route path="/product/:id" element={<ProductDetail />} />
         <Route
           path="/account"
           element={
@@ -115,20 +114,14 @@ function App() {
             </>
           }
         />
-        <Route
-          path="/checkout"
-          element={<CheckoutPage />}
-        />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment-confirmation" element={<PaymentConfirmation />} />
-<Route path="/payment-confirmation/:orderId" element={<PaymentConfirmation />} />
         <Route
-          path="/order-success/:orderId"
-          element={<OrderSuccess />}
+          path="/payment-confirmation/:orderId"
+          element={<PaymentConfirmation />}
         />
-        <Route
-          path="/order-failed"
-          element={<OrderFailed />}
-        />
+        <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+        <Route path="/order-failed" element={<OrderFailed />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>

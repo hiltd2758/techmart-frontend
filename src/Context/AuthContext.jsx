@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useState, useEffect, useContext } from "react";
+import { jwtDecode } from "jwt-decode";
 
 const AuthContext = createContext(null);
 
@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check for token on mount
-    const token = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem("accessToken");
+    const storedUser = localStorage.getItem("user");
 
     if (token && storedUser) {
       try {
@@ -54,21 +54,21 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Save to LocalStorage
-    localStorage.setItem('accessToken', token);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(userToSave));
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("user", JSON.stringify(userToSave));
 
     // Update State
     setUser(userToSave);
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
     setUser(null);
     // Note: You might want to reload or redirect here, but usually the UI reacts to state change
-    // window.location.href = '/login'; 
+    // window.location.href = '/login';
   };
 
   return (

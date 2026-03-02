@@ -68,8 +68,8 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
       });
-      alert("Registration successful! Please login.");
-      navigate("/login");
+      alert("Registration successful!.");
+      navigate("/email-verify");
     } catch (error) {
       console.error("Registration failed:", error);
 
